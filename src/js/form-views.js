@@ -9,12 +9,12 @@ const formViews = {
         <div class="field">
           <label for="title" class="label">Title</label>
           <div class="control">
-            <input type="text" class="input is-primary" name="title" id="post_title">
+            <input type="text" class="input is-primary" name="title" id="post_title" required>
           </div>
         </div>
         <div class="field">
           <label for="body" class="label">Body</label>
-          <textarea class="textarea is-primary" name="body" id="post_body"></textarea>
+          <textarea class="textarea is-primary" name="body" id="post_body" required></textarea>
         </div>
         <div class="field">
           <label for="tags" class="label">Tags</label>
@@ -25,7 +25,7 @@ const formViews = {
         </div>
         <div class="field">
           <div class="control">
-            <button class="button is-primary" type="submit">Save Post</button>
+            <button id="save_post" class="button is-primary" type="submit">Save Post</button>
           </div>
         </div>
       </form>
@@ -41,7 +41,7 @@ const formViews = {
         <div class="field">
           <label for="body" class="label">Body</label>
           <div class="control">
-            <textarea class="textarea is-primary" name="body" id="quip_body"></textarea>
+            <textarea class="textarea is-primary" name="body" id="quip_body" required></textarea>
           </div>
         </div>
         <div class="field">
@@ -53,7 +53,7 @@ const formViews = {
         </div>
         <div class="field">
           <div class="control">
-            <button class="button is-primary" type="submit">Save Quip</button>
+            <button id="save_quip" class="button is-primary" type="submit">Save Quip</button>
           </div>
         </div>
       </form>
@@ -70,7 +70,7 @@ const formViews = {
           <div class="control">
             <div class="file">
               <label class="label">
-                <input type="file" name="image" id="pic_image" class="file-input">
+                <input type="file" name="image" id="pic_image" class="file-input" required>
                 <span class="file-cta">
                   <span class="file-icon">
                     <i class="fa fa-upload"></i>
@@ -86,7 +86,7 @@ const formViews = {
         <div class="field">
           <label for="body" class="label">Body</label>
           <div class="control">
-            <textarea name="body" id="pic_body" class="textarea is-primary"></textarea>
+            <textarea name="body" id="pic_body" class="textarea is-primary" required></textarea>
           </div>
         </div>
         <div class="field">
@@ -98,10 +98,9 @@ const formViews = {
         </div>
         <div class="field">
           <div class="control">
-            <button class="button is-primary" type="submit">Save Pic</button>
+            <button id="save_pic" class="button is-primary" type="submit">Save Pic</button>
           </div>
         </div>
-        <input type="hidden" name="item_type" value="pic">
       </form>
     </div>
   `,
@@ -115,7 +114,7 @@ const formViews = {
         <div class="field">
           <label for="url" class="label">URL</label>
           <div class="control">
-            <input type="text" name="url" id="clip_url" class="input is-primary">
+            <input type="text" name="url" id="clip_url" class="input is-primary" required>
           </div>
         </div>
         <div class="field">
@@ -127,10 +126,9 @@ const formViews = {
         </div>
         <div class="field">
           <div class="control">
-            <button class="button is-primary" type="submit">Save Clip</button>
+            <button id="save_clip" class="button is-primary" type="submit">Save Clip</button>
           </div>
         </div>
-        <input type="hidden" name="item_type" value="clip">
       </form>
     </div>
   `,

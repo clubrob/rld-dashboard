@@ -2,7 +2,13 @@ const dashViews = {
   dashTable: function(data) {
     let html = '';
     data.forEach(doc => {
-      const item = doc.data().title || doc.data().body.substring(0, 50);
+      let item = 'Clip, refresh for title';
+      if (doc.data().body) {
+        item = doc.data().body.substring(0, 50);
+      }
+      if (doc.data().title) {
+        item = doc.data().title;
+      }
       const date = new Date(doc.data().date).toLocaleString();
       const type = doc.data().item_type;
       const id = doc.id;

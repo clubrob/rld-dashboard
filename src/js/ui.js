@@ -15,6 +15,10 @@ const ui = {
   // Buttons
   contentTable: document.querySelector('#content_table'),
   loginButton: document.querySelector('#login_button'),
+  savePostButton: document.querySelector('#save_post'),
+  saveQuipButton: document.querySelector('#save_quip'),
+  savePicButton: document.querySelector('#save_pic'),
+  saveClipButton: document.querySelector('#save_clip'),
   // Data
   email: document.querySelector('#email'),
   password: document.querySelector('#password'),

@@ -3,7 +3,7 @@ require('firebase/auth');
 require('firebase/storage');
 require('firebase/firestore');
 var ui = require('./ui');
-var formViews = require('./form-views');
+var handler = require('./event-handlers');
 var dashViews = require('./dash-views');
 
 var firebaseConfig = {
@@ -43,122 +43,28 @@ auth.onAuthStateChanged(function checkUser(user) {
 });
 
 // Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
-  navBurgerHandler();
-});
-ui.logoutLink.addEventListener('click', logoutHandler);
-ui.loginButton.addEventListener('click', loginHandler);
+document.addEventListener('DOMContentLoaded', handler.toggleMobileMenu);
+ui.logoutLink.addEventListener('click', handler.logout);
+ui.loginButton.addEventListener('click', handler.login);
 const addLinks = ui.addList.querySelectorAll('a');
 addLinks.forEach(link => {
-  link.addEventListener('click', addModalHandler);
+  link.addEventListener('click', handler.addModal);
 });
-ui.modalClose.addEventListener('click', modalCloseHandler);
-ui.modal.addEventListener('keyup', tagInputHandler);
-ui.modal.addEventListener('click', tagDeleteHandler);
-ui.contentTable.addEventListener('click', editButtonHandler);
-ui.contentTable.addEventListener('click', deleteButtonHandler);
-
-// Event Handlers
-// Bulma script for expanding mainNav
-function navBurgerHandler() {
-  const navbarBurgers = Array.prototype.slice.call(
-    document.querySelectorAll('.navbar-burger'),
-    0
-  );
-  if (navbarBurgers.length > 0) {
-    navbarBurgers.forEach(burger => {
-      burger.addEventListener('click', () => {
-        const target = burger.dataset.target;
-        const menu = document.getElementById(target);
-        burger.classList.toggle('is-active');
-        menu.classList.toggle('is-active');
-      });
-    });
-  }
-}
-
-function logoutHandler(event) {
-  auth.signOut();
-  event.preventDefault();
-}
-
-function loginHandler(event) {
-  var email = ui.email.value;
-  var password = ui.password.value;
-
-  auth
-    .signInWithEmailAndPassword(email, password)
-    .catch(err => console.error(err.message));
-
-  event.preventDefault();
-}
-
-function addModalHandler(event) {
-  const formType = event.target.attributes.id.value.split('_')[1];
-  ui.modalContent.innerHTML = formViews[formType];
-  ui.modal.classList.add('is-active');
-  event.preventDefault();
-}
-
-function modalCloseHandler(event) {
-  ui.modalContent.innerHTML = '';
-  ui.modal.classList.remove('is-active');
-  event.preventDefault();
-}
-
-function tagInputHandler(event) {
-  const tagInput = event.target;
-  const key = event.keyCode;
-  const tagHolder = tagInput.nextElementSibling;
-
-  if (tagInput && tagInput.matches('.form-tags') && key === 188) {
-    // Build the tagSpan and children
-    // Tag text, comma removed
-    const tagText = document.createTextNode(
-      tagInput.value.substr(0, tagInput.value.length - 1)
-    );
-    // Tag delete button
-    let tagDelete = document.createElement('button');
-    tagDelete.classList.add('delete', 'is-small');
-    // Tag wrapper span
-    let tagSpan = document.createElement('span');
-    tagSpan.classList.add('tag', 'is-dark');
-    // Put it all together
-    tagSpan.appendChild(tagText);
-    tagSpan.appendChild(tagDelete);
-    tagHolder.appendChild(tagSpan);
-    // Reset the form
-    tagInput.value = '';
-  }
-}
-
-function tagDeleteHandler(event) {
-  const tagDelete = event.target;
-  if (tagDelete && tagDelete.matches('.delete')) {
-    event.target.parentElement.remove();
-  }
-}
-
-function editButtonHandler(event) {
-  const btn = event.target;
-  if (btn && btn.matches('.edit-button')) {
-    console.log(btn);
-  }
-  event.preventDefault();
-}
-
-function deleteButtonHandler(event) {
-  const btn = event.target;
-  if (btn && btn.matches('.delete-button')) {
-    console.log(btn);
-  }
-  event.preventDefault();
-}
-// End event handlers
+ui.modalClose.addEventListener('click', handler.closeModal);
+ui.modal.addEventListener('keyup', handler.inputTag);
+ui.modal.addEventListener('click', handler.deleteTag);
+ui.modal.addEventListener('click', handler.savePost);
+ui.modal.addEventListener('click', handler.saveQuip);
+ui.modal.addEventListener('click', handler.savePic);
+ui.modal.addEventListener('click', handler.saveClip);
+ui.modal.addEventListener('click', handler.deleteItem);
+ui.contentTable.addEventListener('click', handler.openEditModal);
+ui.contentTable.addEventListener('click', handler.openDeleteModal);
 
 function getAllContent() {
   firestore
     .collection('feed_items')
+    .orderBy('date', 'desc')
     .get()
     .then(snapshot => {
       return (ui.contentTableBody.innerHTML = dashViews.dashTable(
