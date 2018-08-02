@@ -1,0 +1,35 @@
+{
+  "name": "roblindseydesign",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "gulp build",
+    "watch": "gulp"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-register": "^6.26.0",
+    "browser-sync": "^2.24.6",
+    "connect-history-api-fallback": "^1.5.0",
+    "dotenv": "^6.0.0",
+    "firebase-tools": "^4.0.2",
+    "gulp": "^4.0.0",
+    "gulp-csso": "^3.0.1",
+    "gulp-pug": "^4.0.1",
+    "gulp-sass": "^4.0.1",
+    "gulp-sourcemaps": "^2.6.4",
+    "gulp-uglify-es": "^1.0.4",
+    "webpack-stream": "^5.1.0"
+  },
+  "dependencies": {
+    "bulma": "^0.7.1",
+    "firebase": "^5.3.0",
+    "firebaseui": "^3.2.0",
+    "page": "^1.8.6"
+  }
+}

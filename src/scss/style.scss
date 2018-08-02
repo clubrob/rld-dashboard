@@ -1,0 +1,12 @@
+@import 'bulma/bulma.sass';
+
+.hide {
+  display: none;
+}
+a.tag {
+  text-decoration: none;
+  &:hover {
+    text-decoration: none;
+    background-color: darken(#3273dc, 10%);
+  }
+}

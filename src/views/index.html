@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rob Lindsey Design Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.1.1/firebaseui.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+</head>
+
+<body>
+  <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand"><a class="navbar-item" href="/">Rob Lindsey Design</a>
+      <div class="navbar-burger" role="button" aria-label="menu" aria-expanded="false" data-target="mainNav"><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></div>
+    </div>
+    <div class="navbar-menu" id="mainNav">
+      <div class="navbar-start">
+        <a id="login_link" class="navbar-item" href="#">Login</a>
+        <a id="logout_link" class="navbar-item" href="#">Logout</a>
+      </div>
+    </div>
+  </nav>
+  <section id="login" class="section">
+    <div class="container">
+      <h1 class="title is-1">Log In</h1>
+      <form class="form">
+        <div class="field">
+          <label for="email" class="label">Email</label>
+          <div class="control">
+            <input id="email" class="input is-primary" name="email" type="text">
+          </div>
+        </div>
+        <div class="field">
+          <label for="password" class="label">Password</label>
+          <div class="control">
+            <input id="password" class="input is-primary" name="password" type="password">
+          </div>
+        </div>
+        <div class="field">
+          <div class="control">
+            <button id="login_button" class="button is-primary">Log In</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
+  <section id="dashboard" class="section">
+    <div class="container">
+      <h1 class="title is-1">RLD Dashboard</h1>
+      <div id="add_list" class="tags">
+        <a href="#" id="add_post" class="tag is-link is-medium">New Post</a>
+        <a href="#" id="add_quip" class="tag is-link is-medium">New Quip</a>
+        <a href="#" id="add_pic" class="tag is-link is-medium">New Pic</a>
+        <a href="#" id="add_clip" class="tag is-link is-medium">New Clip</a>
+      </div>
+    </div>
+    <table id="content_table" class="table"></table>
+  </section>
+  <div id="dash_modal" class="modal">
+    <div class="modal-background"></div>
+    <div id="dash_modal_content" class="modal-card">
+    </div>
+    <button class="modal-close is-large" aria-label="close"></button>
+  </div>
+
+  <script src="js/app.bundle.js"></script>
+</body>
+
+</html>
