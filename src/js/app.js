@@ -2,9 +2,11 @@ var firebase = require('firebase/app');
 require('firebase/auth');
 require('firebase/storage');
 require('firebase/firestore');
+var ui = require('./ui');
 var formViews = require('./form-views');
+var dashViews = require('./dash-views');
 
-const firebaseConfig = {
+var firebaseConfig = {
   projectId: process.env.FIREBASE_PROJECT_ID,
   apiKey: process.env.FIREBASE_API_KEY,
   authDomain: process.env.FIREBASE_AUTH_DOMAIN,
@@ -14,42 +16,29 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 window.firebase = firebase;
-const firestore = firebase.firestore();
-const firestoreConfig = { timestampsInSnapshots: true };
+
+var auth = firebase.auth();
+var firestore = firebase.firestore();
+var firestoreConfig = { timestampsInSnapshots: true };
 firestore.settings(firestoreConfig);
 
 // Hide content before auth check
 document.body.style.display = 'none';
 
-const uiElements = {
-  loginSection: document.querySelector('#login'),
-  dashboardSection: document.querySelector('#dashboard'),
-  loginLink: document.querySelector('#login_link'),
-  logoutLink: document.querySelector('#logout_link'),
-  contentTable: document.querySelector('#content_table'),
-  loginButton: document.querySelector('#login_button'),
-  email: document.querySelector('#email'),
-  password: document.querySelector('#password'),
-  addList: document.querySelector('#add_list'),
-  modal: document.querySelector('#dash_modal'),
-  modalContent: document.querySelector('#dash_modal_content'),
-  modalClose: document.querySelector('.modal-close'),
-};
-
-firebase.auth().onAuthStateChanged(function checkUser(user) {
+auth.onAuthStateChanged(function checkUser(user) {
   if (user) {
-    getContent();
+    getAllContent();
     document.body.style.display = 'block';
-    uiElements.loginSection.style.display = 'none';
-    uiElements.loginLink.style.display = 'none';
-    uiElements.dashboardSection.style.display = 'block';
-    uiElements.logoutLink.style.display = 'block';
+    ui.loginSection.style.display = 'none';
+    ui.loginLink.style.display = 'none';
+    ui.dashboardSection.style.display = 'block';
+    ui.logoutLink.style.display = 'block';
   } else {
     document.body.style.display = 'block';
-    uiElements.loginSection.style.display = 'block';
-    uiElements.loginLink.style.display = 'block';
-    uiElements.dashboardSection.style.display = 'none';
-    uiElements.logoutLink.style.display = 'none';
+    ui.loginSection.style.display = 'block';
+    ui.loginLink.style.display = 'block';
+    ui.dashboardSection.style.display = 'none';
+    ui.logoutLink.style.display = 'none';
   }
 });
 
@@ -57,15 +46,17 @@ firebase.auth().onAuthStateChanged(function checkUser(user) {
 document.addEventListener('DOMContentLoaded', () => {
   navBurgerHandler();
 });
-uiElements.logoutLink.addEventListener('click', logoutHandler);
-uiElements.loginButton.addEventListener('click', loginHandler);
-const addLinks = uiElements.addList.querySelectorAll('a');
+ui.logoutLink.addEventListener('click', logoutHandler);
+ui.loginButton.addEventListener('click', loginHandler);
+const addLinks = ui.addList.querySelectorAll('a');
 addLinks.forEach(link => {
-  link.addEventListener('click', addHandler);
+  link.addEventListener('click', addModalHandler);
 });
-uiElements.modalClose.addEventListener('click', modalCloseHandler);
-uiElements.modal.addEventListener('keyup', tagInputHandler);
-uiElements.modal.addEventListener('click', tagDeleteHandler);
+ui.modalClose.addEventListener('click', modalCloseHandler);
+ui.modal.addEventListener('keyup', tagInputHandler);
+ui.modal.addEventListener('click', tagDeleteHandler);
+ui.contentTable.addEventListener('click', editButtonHandler);
+ui.contentTable.addEventListener('click', deleteButtonHandler);
 
 // Event Handlers
 // Bulma script for expanding mainNav
@@ -87,32 +78,31 @@ function navBurgerHandler() {
 }
 
 function logoutHandler(event) {
-  firebase.auth().signOut();
+  auth.signOut();
   event.preventDefault();
 }
 
 function loginHandler(event) {
-  var email = uiElements.email.value;
-  var password = uiElements.password.value;
+  var email = ui.email.value;
+  var password = ui.password.value;
 
-  firebase
-    .auth()
+  auth
     .signInWithEmailAndPassword(email, password)
     .catch(err => console.error(err.message));
 
   event.preventDefault();
 }
 
-function addHandler(event) {
+function addModalHandler(event) {
   const formType = event.target.attributes.id.value.split('_')[1];
-  uiElements.modalContent.innerHTML = formViews[formType];
-  uiElements.modal.classList.add('is-active');
+  ui.modalContent.innerHTML = formViews[formType];
+  ui.modal.classList.add('is-active');
   event.preventDefault();
 }
 
 function modalCloseHandler(event) {
-  uiElements.modalContent.innerHTML = '';
-  uiElements.modal.classList.remove('is-active');
+  ui.modalContent.innerHTML = '';
+  ui.modal.classList.remove('is-active');
   event.preventDefault();
 }
 
@@ -148,15 +138,34 @@ function tagDeleteHandler(event) {
     event.target.parentElement.remove();
   }
 }
+
+function editButtonHandler(event) {
+  const btn = event.target;
+  if (btn && btn.matches('.edit-button')) {
+    console.log(btn);
+  }
+  event.preventDefault();
+}
+
+function deleteButtonHandler(event) {
+  const btn = event.target;
+  if (btn && btn.matches('.delete-button')) {
+    console.log(btn);
+  }
+  event.preventDefault();
+}
 // End event handlers
-function getContent() {
+
+function getAllContent() {
   firestore
     .collection('feed_items')
     .get()
     .then(snapshot => {
-      return snapshot.forEach(doc => {
-        return console.log(doc.data());
-      });
+      return (ui.contentTableBody.innerHTML = dashViews.dashTable(
+        snapshot.docs
+      ));
     })
     .catch(err => console.error(err.message));
 }
+
+function getSingleContent(id) {}
