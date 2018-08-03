@@ -250,7 +250,7 @@ exports.scrapeClip = functions.firestore
           return snapshot.ref.set(
             {
               title: clipProps.title,
-              summary: clipProps.summary,
+              body: clipProps.summary,
               slug: clipProps.slug,
             },
             { merge: true }

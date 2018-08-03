@@ -56,6 +56,8 @@ ui.modal.addEventListener('click', handler.deleteTag);
 ui.modal.addEventListener('click', handler.savePost);
 ui.modal.addEventListener('click', handler.saveQuip);
 ui.modal.addEventListener('click', handler.savePic);
+ui.modal.addEventListener('click', handler.resetPic);
+ui.modal.addEventListener('change', handler.previewPic);
 ui.modal.addEventListener('click', handler.saveClip);
 ui.modal.addEventListener('click', handler.deleteItem);
 ui.contentTable.addEventListener('click', handler.openEditModal);

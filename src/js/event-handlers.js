@@ -2,11 +2,13 @@ var slugify = require('slugify');
 var ui = require('./ui');
 var formViews = require('./form-views');
 
-function tagReducer(tagObj, tag) {
-  if (!tagObj[tag]) {
-    tagObj[tag] = Date.now();
-  }
-  return tagObj;
+function reduceTags(arr, options) {
+  return arr.reduce((accObj, item) => {
+    if (!accObj[item]) {
+      accObj[item] = options ? options.date : true;
+    }
+    return accObj;
+  }, {});
 }
 
 function modalCloseAndReload() {
@@ -52,7 +54,7 @@ const eventHandlers = {
 
   addModal: function(event) {
     const formType = event.target.attributes.id.value.split('_')[1];
-    ui.modalContent.innerHTML = formViews[formType];
+    ui.modalContent.innerHTML = formViews[formType]();
     ui.modal.classList.add('is-active');
     event.preventDefault();
   },
@@ -99,9 +101,22 @@ const eventHandlers = {
   openEditModal: function(event) {
     const btn = event.target;
     if (btn && btn.matches('.edit-button')) {
-      console.log(btn);
+      const formType = btn.attributes.href.value.split('_')[1];
+      const id = btn.attributes.href.value.split('_')[2];
+
+      firebase
+        .firestore()
+        .collection('feed_items')
+        .doc(id)
+        .get()
+        .then(doc => {
+          ui.modalContent.innerHTML = formViews[formType](doc);
+          ui.modal.classList.add('is-active');
+          return;
+        })
+        .catch(err => console.error(err.message));
+      event.preventDefault();
     }
-    event.preventDefault();
   },
 
   openDeleteModal: function(event) {
@@ -138,125 +153,341 @@ const eventHandlers = {
           return modalCloseAndReload();
         })
         .catch(err => console.error(err.message));
+      event.preventDefault();
     }
-    event.preventDefault();
   },
 
   savePost: function(event) {
     const btn = event.target;
-    if (btn && btn.matches('#save_post')) {
-      let form = document.querySelector('#post_form');
 
+    if (btn && btn.matches('#save_post')) {
+      // Gather variables
+      let form = document.querySelector('#post_form');
       let title = form.querySelector('#post_title').value;
       let body = form.querySelector('#post_body').value;
-      let date = Date.now();
+      let date = form.querySelector('#post_date').value;
       let tags = Array.from(form.getElementsByClassName('tag')).map(
         tag => tag.textContent
       );
-      let slugDigit = Math.floor(Math.random() * 90000) + 10000;
-      let slug = slugify(`${title}-${slugDigit}`, {
-        remove: /[$*_+~.()'"!,?:@]/g,
-      });
+      let slug = form.querySelector('#post_slug').value;
 
-      if (tags.length > 0) {
-        tags = tags.reduce(tagReducer, {});
+      // If empty ID, then new post; else, edit post.
+      // CREATE POST
+      if (form.querySelector('#post_id').value === '') {
+        date = Date.now();
+        if (tags.length > 0) {
+          tags = reduceTags(tags, { date: date });
+        }
+        // Randomize slug to use as index for queries
+        let slugDigit = Math.floor(Math.random() * 90000) + 10000;
+        slug = slugify(`${title}-${slugDigit}`, {
+          remove: /[$*_+~.()'"!,?:@]/g,
+        });
+
+        // TODO validation
+        firebase
+          .firestore()
+          .collection('feed_items')
+          .add({
+            title: title,
+            body: body,
+            tags: tags,
+            slug: slug,
+            item_type: 'post',
+            date: date,
+          })
+          .then(docRef => {
+            console.log('New Post with ID: ', docRef.id);
+            return modalCloseAndReload();
+          })
+          .catch(err => console.error(err.message));
+      } else {
+        // EDIT POST
+        let id = form.querySelector('#post_id').value;
+        // Keep original post date for tag values
+        if (tags.length > 0) {
+          tags = reduceTags(tags, { date: date });
+        }
+        // TODO validation
+        firebase
+          .firestore()
+          .collection('feed_items')
+          .doc(id)
+          .update({
+            title: title,
+            body: body,
+            tags: tags,
+            slug: slug,
+            updated: Date.now(),
+          })
+          .then(() => {
+            console.log(id, ' Updated!');
+            return modalCloseAndReload();
+          })
+          .catch(err => console.error(err.message));
       }
-
-      firebase
-        .firestore()
-        .collection('feed_items')
-        .add({
-          title: title,
-          body: body,
-          tags: tags,
-          slug: slug,
-          item_type: 'post',
-          date: date,
-        })
-        .then(docRef => {
-          console.log('New Post with ID: ', docRef.id);
-          return modalCloseAndReload();
-        })
-        .catch(err => console.error(err.message));
+      event.preventDefault();
     }
-    event.preventDefault();
   },
 
   saveQuip: function(event) {
     const btn = event.target;
+
     if (btn && btn.matches('#save_quip')) {
       let form = document.querySelector('#quip_form');
-
       let body = form.querySelector('#quip_body').value;
-      let date = Date.now();
       let tags = Array.from(form.getElementsByClassName('tag')).map(
         tag => tag.textContent
       );
-      let slugDigit = Math.floor(Math.random() * 90000) + 10000;
-      let slug = `${date}-${slugDigit}`;
+      let date = form.querySelector('#quip_date').value;
 
-      if (tags.length > 0) {
-        tags = tags.reduce(tagReducer, {});
+      if (form.querySelector('#quip_id').value === '') {
+        // CREATE QUIP
+        date = Date.now();
+        if (tags.length > 0) {
+          tags = reduceTags(tags, { date: date });
+        }
+        let slugDigit = Math.floor(Math.random() * 90000) + 10000;
+        let slug = `${date}-${slugDigit}`;
+
+        // TODO validation
+        firebase
+          .firestore()
+          .collection('feed_items')
+          .add({
+            body: body,
+            tags: tags,
+            slug: slug,
+            item_type: 'quip',
+            date: date,
+          })
+          .then(docRef => {
+            console.log('New Quip with ID: ', docRef.id);
+            return modalCloseAndReload();
+          })
+          .catch(err => console.error(err.message));
+      } else {
+        // EDIT QUIP
+        let id = form.querySelector('#quip_id').value;
+        if (tags.length > 0) {
+          tags = reduceTags(tags, { date: date });
+        }
+        // TODO validation
+        firebase
+          .firestore()
+          .collection('feed_items')
+          .doc(id)
+          .update({
+            body: body,
+            tags: tags,
+            updated: Date.now(),
+          })
+          .then(() => {
+            console.log(id, ' Updated!');
+            return modalCloseAndReload();
+          })
+          .catch(err => console.error(err.message));
       }
-
-      firebase
-        .firestore()
-        .collection('feed_items')
-        .add({
-          body: body,
-          tags: tags,
-          slug: slug,
-          item_type: 'quip',
-          date: date,
-        })
-        .then(docRef => {
-          console.log('New Quip with ID: ', docRef.id);
-          return modalCloseAndReload();
-        })
-        .catch(err => console.error(err.message));
+      event.preventDefault();
     }
-    event.preventDefault();
   },
 
   savePic: function(event) {
     const btn = event.target;
+
     if (btn && btn.matches('#save_pic')) {
-      console.log(btn);
+      // Form variables
+      let form = document.querySelector('#pic_form');
+      let body = form.querySelector('#pic_body').value;
+      let tags = Array.from(form.getElementsByClassName('tag')).map(
+        tag => tag.textContent
+      );
+      let date = form.querySelector('#pic_date').value;
+
+      if (form.querySelector('#pic_id').value === '') {
+        // CREATE PIC
+        // File info
+        let image = document.querySelector('#pic_image').files[0];
+        let fileName = image.name;
+        date = Date.now();
+        if (tags.length > 0) {
+          tags = reduceTags(tags, { date: date });
+        }
+        let slugDigit = Math.floor(Math.random() * 90000) + 10000;
+        let slug = `${date}-${slugDigit}`;
+
+        // Empty document to associate with the pic
+        let itemId = firebase
+          .firestore()
+          .collection('feed_items')
+          .doc().id;
+
+        let storage = firebase.storage();
+        let storageRef = storage.ref();
+        let newPicRef = storageRef.child(`${itemId}/${fileName}`);
+
+        return newPicRef
+          .put(image)
+          .then(snapshot => {
+            console.log('New pic uploaded');
+            return snapshot.ref.getDownloadURL();
+          })
+          .then(url => {
+            console.log('file url: ', url);
+            return url;
+          })
+          .then(url => {
+            // TODO validation
+            return firebase
+              .firestore()
+              .collection('feed_items')
+              .doc(itemId)
+              .set({
+                storage_url: url,
+                body: body,
+                tags: tags,
+                slug: slug,
+                item_type: 'pic',
+                date: date,
+              });
+          })
+          .then(docRef => {
+            console.log('New Pic with ID: ', docRef.id);
+            return modalCloseAndReload();
+          })
+          .catch(err => console.error(err.message));
+      } else {
+        // EDIT PIC
+        let id = form.querySelector('#pic_id').value;
+        if (tags.length > 0) {
+          tags = reduceTags(tags, { date: date });
+        }
+        // TODO validation
+        firebase
+          .firestore()
+          .collection('feed_items')
+          .doc(id)
+          .update({
+            body: body,
+            tags: tags,
+            updated: Date.now(),
+          })
+          .then(() => {
+            console.log(id, ' Updated!');
+            return modalCloseAndReload();
+          })
+          .catch(err => console.error(err.message));
+      }
+      event.preventDefault();
     }
-    event.preventDefault();
+  },
+
+  previewPic: function(event) {
+    const input = event.target;
+
+    if (input && input.matches('#pic_image')) {
+      let imageFile = input.files[0];
+      let fileName = imageFile.name;
+      let picSrc = window.URL.createObjectURL(imageFile);
+
+      let previewDiv = document.querySelector('#pic_preview');
+      previewDiv.innerHTML = `<img class="is-square" src="${picSrc}" alt="${fileName}">`;
+      let picContainer = document.querySelector('#pic_container');
+      picContainer.classList.add('is-invisible');
+      picContainer.style.position = 'absolute';
+      picContainer.insertAdjacentHTML(
+        'afterend',
+        `<button id="pic_reset" class="button is-danger">Cancel</button>`
+      );
+    }
+  },
+
+  resetPic: function(event) {
+    const btn = event.target;
+
+    if (btn && btn.matches('#pic_reset')) {
+      btn.parentNode.removeChild(btn);
+      let picContainer = document.querySelector('#pic_container');
+      let picField = `
+        <input type="file" name="image" id="pic_image" class="file-input" required>
+        <span class="file-cta">
+          <span class="file-icon">
+            <i class="fa fa-upload"></i>
+          </span>
+          <span class="file-label">
+            Add Image...
+          </span>
+        </span>
+      `;
+      picContainer.innerHTML = picField;
+      picContainer.classList.remove('is-invisible');
+      picContainer.style.position = 'static';
+      let previewDiv = document.querySelector('#pic_preview');
+      previewDiv.innerHTML = '';
+
+      event.preventDefault();
+    }
   },
 
   saveClip: function(event) {
     const btn = event.target;
     if (btn && btn.matches('#save_clip')) {
       let form = document.querySelector('#clip_form');
-
       let url = form.querySelector('#clip_url').value;
-      let date = Date.now();
       let tags = Array.from(form.getElementsByClassName('tag')).map(
         tag => tag.textContent
       );
+      let date = form.querySelector('#clip_date').value;
+      let slug = form.querySelector('#clip_slug').value;
 
-      if (tags.length > 0) {
-        tags = tags.reduce(tagReducer, {});
+      if (form.querySelector('#clip_id').value === '') {
+        date = Date.now();
+        if (tags.length > 0) {
+          tags = reduceTags(tags, { date: date });
+        }
+
+        firebase
+          .firestore()
+          .collection('feed_items')
+          .add({
+            url: url,
+            tags: tags,
+            item_type: 'clip',
+            date: date,
+          })
+          .then(docRef => {
+            console.log('New Clip with ID: ', docRef.id);
+            return modalCloseAndReload();
+          })
+          .catch(err => console.error(err.message));
+      } else {
+        let id = form.querySelector('#clip_id').value;
+        let title = form.querySelector('#clip_title').value;
+        let body = form.querySelector('#clip_body').value;
+        // Keep original post date for tag values
+        if (tags.length > 0) {
+          tags = reduceTags(tags, { date: date });
+        }
+        // TODO validation
+        firebase
+          .firestore()
+          .collection('feed_items')
+          .doc(id)
+          .update({
+            title: title,
+            body: body,
+            tags: tags,
+            slug: slug,
+            updated: Date.now(),
+          })
+          .then(() => {
+            console.log(id, ' Updated!');
+            return modalCloseAndReload();
+          })
+          .catch(err => console.error(err.message));
       }
-
-      firebase
-        .firestore()
-        .collection('feed_items')
-        .add({
-          url: url,
-          tags: tags,
-          item_type: 'clip',
-          date: date,
-        })
-        .then(docRef => {
-          console.log('New Clip with ID: ', docRef.id);
-          return modalCloseAndReload();
-        })
-        .catch(err => console.error(err.message));
+      event.preventDefault();
     }
-    event.preventDefault();
   },
 };
 

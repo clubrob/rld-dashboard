@@ -1,13 +1,19 @@
 const path = require('path');
 const gulp = require('gulp');
+const del = require('del');
 // const pug = require('gulp-pug');
 const sass = require('gulp-sass');
 const csso = require('gulp-csso');
 const terser = require('gulp-uglify-es').default;
 const webpackStream = require('webpack-stream');
+const imagemin = require('gulp-imagemin');
 const browser = require('browser-sync').create();
 const historyApi = require('connect-history-api-fallback');
 require('dotenv').config();
+
+gulp.task('clean:public', () => {
+  return del(['public/**/*']);
+});
 
 gulp.task('bundleJSDev', () =>
   gulp
@@ -85,9 +91,17 @@ gulp.task('cleanHTML', () =>
     .pipe(browser.stream())
 );
 
+gulp.task('optimizeImages', done => {
+  gulp
+    .src('src/images/**/*')
+    .pipe(imagemin())
+    .pipe(gulp.dest('public/images/'));
+  done();
+});
+
 gulp.task(
   'serve',
-  gulp.parallel(['bundleCSS', 'bundleJSDev', 'cleanHTML'], () => {
+  gulp.parallel(['optimizeImages', 'bundleCSS', 'bundleJSDev', 'cleanHTML'], () => {
     browser.init({
       server: {
         baseDir: './public',
@@ -98,8 +112,10 @@ gulp.task(
     gulp.watch('src/scss/**/*.scss', gulp.series('bundleCSS'));
     gulp.watch('src/js/**/*.js', gulp.series('bundleJSDev'));
     gulp.watch('src/views/**/*.html', gulp.series('cleanHTML'));
+    gulp.watch('src/images/**/*', gulp.series('optimizeImages'));
   })
 );
 
 gulp.task('default', gulp.series('serve'));
-gulp.task('build', gulp.parallel('bundleCSS', 'bundleJS', 'cleanHTML'));
+gulp.task('build', gulp.parallel('optimizeImages', 'bundleCSS', 'bundleJS', 'cleanHTML'));
+gulp.task('prod', gulp.series('clean:public', 'build'));
