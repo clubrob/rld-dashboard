@@ -19,7 +19,7 @@
     "connect-history-api-fallback": "^1.5.0",
     "del": "^3.0.0",
     "dotenv": "^6.0.0",
-    "firebase-tools": "^4.0.2",
+    "firebase-tools": "^4.0.3",
     "gulp": "^4.0.0",
     "gulp-csso": "^3.0.1",
     "gulp-imagemin": "^4.1.0",
@@ -31,9 +31,9 @@
   },
   "dependencies": {
     "bulma": "^0.7.1",
-    "firebase": "^5.3.0",
+    "firebase": "^5.3.1",
     "firebaseui": "^3.2.0",
     "page": "^1.8.6",
-    "slugify": "^1.3.0"
+    "slugify": "^1.3.1"
   }
 }
