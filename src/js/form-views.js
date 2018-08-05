@@ -107,6 +107,7 @@ const formViews = {
     let date = data ? data.data().date : '';
     let slug = data ? data.data().slug : '';
     let tags = data ? Object.keys(data.data().tags) : '';
+    let storage_url = data ? data.data().storage_url : '';
     let tagGroup = '';
     if (tags.length > 0) {
       tags.forEach(tag => {
@@ -116,6 +117,7 @@ const formViews = {
       });
     }
 
+    let imgPreview = '';
     let picField = `
       <div class="field" id="pic_field">
         <div class="control">
@@ -137,6 +139,11 @@ const formViews = {
     `;
     if (data) {
       picField = '';
+      imgPreview = `
+        <div class="box">
+          <p><img src="${storage_url}"></p>
+        </div>
+      `;
     }
 
     return `
@@ -145,7 +152,7 @@ const formViews = {
         <h3 class="modal-card-title is-3">${formTitle}</h3>
       </div>
       <div class="modal-card-body">
-        <div id="pic_preview"></div>
+        <div id="pic_preview">${imgPreview}</div>
         <form id="pic_form" class="form" method="post" enctype="multipart/form-data">
           ${picField}
           <div class="field">

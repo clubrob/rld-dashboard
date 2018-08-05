@@ -10,6 +10,9 @@ const dashViews = {
       if (doc.data().title) {
         item = doc.data().title;
       }
+      if (doc.data().filename) {
+        item = doc.data().title;
+      }
       const date = new Date(doc.data().date).toLocaleString();
       const type = doc.data().item_type;
       const id = doc.id;
@@ -18,12 +21,12 @@ const dashViews = {
         <tr>
           <td>${item}</td>
           <td><span class="is-size-7">${date}</span></td>
-          <td><span class="tag is-info is-uppercase">${type}</span></td>
+          <td><span class="tag is-info is-uppercase content-type">${type}</span></td>
           <td>
             <a href="edit_${type}_${id}" class="button is-success edit-button">
               Edit
             </a>
-            <a href="delete_${id}" class="button is-danger delete-button">
+            <a href="delete_${type}_${id}" class="button is-danger delete-button">
               Delete
             </a>
           </td>

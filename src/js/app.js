@@ -75,5 +75,3 @@ function getAllContent() {
     })
     .catch(err => console.error(err.message));
 }
-
-function getSingleContent(id) {}

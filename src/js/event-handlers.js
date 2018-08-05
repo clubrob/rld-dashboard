@@ -122,14 +122,15 @@ const eventHandlers = {
   openDeleteModal: function(event) {
     const btn = event.target;
     if (btn && btn.matches('.delete-button')) {
-      const id = btn.attributes.href.value.split('_')[1];
+      const type = btn.attributes.href.value.split('_')[1];
+      const id = btn.attributes.href.value.split('_')[2];
       ui.modalContent.innerHTML = `
       <div class="message is-info">
         <div class="message-header">
           <p>Are you sure? No take backsies!</p>
         </div>
         <div class="message-body">
-        <button class="button is-danger for-real-delete" data-id="${id}">Yup. Delete it.</button>
+        <button class="button is-danger for-real-delete" data-id="${id}" data-type="${type}">Yup. Delete it.</button>
         </div>
       </div>
     `;
@@ -142,6 +143,17 @@ const eventHandlers = {
     const btn = event.target;
     if (btn && btn.matches('.for-real-delete')) {
       const id = btn.dataset.id;
+      const type = btn.dataset.type;
+
+      if (type === 'pic') {
+        firebase
+          .storage()
+          .ref()
+          .child(`${id}/**`)
+          .delete()
+          .then(() => console.log('File deleted'))
+          .catch(err => console.error(err.message));
+      }
 
       firebase
         .firestore()
@@ -326,7 +338,7 @@ const eventHandlers = {
         let storageRef = storage.ref();
         let newPicRef = storageRef.child(`${itemId}/${fileName}`);
 
-        return newPicRef
+        newPicRef
           .put(image)
           .then(snapshot => {
             console.log('New pic uploaded');
@@ -334,9 +346,6 @@ const eventHandlers = {
           })
           .then(url => {
             console.log('file url: ', url);
-            return url;
-          })
-          .then(url => {
             // TODO validation
             return firebase
               .firestore()
@@ -344,6 +353,7 @@ const eventHandlers = {
               .doc(itemId)
               .set({
                 storage_url: url,
+                picname: filename,
                 body: body,
                 tags: tags,
                 slug: slug,
@@ -351,8 +361,8 @@ const eventHandlers = {
                 date: date,
               });
           })
-          .then(docRef => {
-            console.log('New Pic with ID: ', docRef.id);
+          .then(() => {
+            console.log('New Pic with ID: ', itemId);
             return modalCloseAndReload();
           })
           .catch(err => console.error(err.message));
