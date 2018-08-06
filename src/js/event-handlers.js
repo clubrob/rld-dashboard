@@ -101,8 +101,8 @@ const eventHandlers = {
   openEditModal: function(event) {
     const btn = event.target;
     if (btn && btn.matches('.edit-button')) {
-      const formType = btn.attributes.href.value.split('_')[1];
-      const id = btn.attributes.href.value.split('_')[2];
+      const formType = btn.dataset.type;
+      const id = btn.dataset.id;
 
       firebase
         .firestore()
@@ -314,6 +314,7 @@ const eventHandlers = {
       // Form variables
       let form = document.querySelector('#pic_form');
       let body = form.querySelector('#pic_body').value;
+      let alt = form.querySelector('#pic_alt').value;
       let tags = Array.from(form.getElementsByClassName('tag')).map(
         tag => tag.textContent
       );
@@ -331,11 +332,22 @@ const eventHandlers = {
         // CREATE PIC
         // File info
         let image = document.querySelector('#pic_image').files[0];
-        filename = image.name;
+        let fileArr = image.name.toLowerCase().split('.');
+        let fileExt = fileArr[fileArr.length - 1];
+
+        console.log(image, fileExt);
+        // Rewrite scripted variables for new item
         date = Date.now();
         if (tags.length > 0) {
           tags = reduceTags(tags, { date: date });
         }
+
+        // Slug and filename for pic
+        let altSlugged = slugify(`${alt.toLowerCase()}`, {
+          remove: /[$*_+~.()'"!,?:@]/g,
+        });
+        filename = `${altSlugged}.${fileExt}`;
+
         let slugDigit = Math.floor(Math.random() * 90000) + 10000;
         let slug = `${date}-${slugDigit}`;
 
@@ -360,6 +372,7 @@ const eventHandlers = {
                 body: body,
                 tags: tags,
                 slug: slug,
+                alt: alt,
                 item_type: 'pic',
                 date: date,
               });
@@ -378,8 +391,15 @@ const eventHandlers = {
         // File info
         let image = document.querySelector('#pic_image').files[0];
 
+        // If new image file.
         if (image) {
-          let newFilename = image.name;
+          // Slug and filename for pic
+          let fileExt = image.name.split('.')[image.name.length - 1];
+          let altSlugged = slugify(`${alt}`, {
+            remove: /[$*_+~.()'"!,?:@]/g,
+          });
+          let newFilename = `${altSlugged}.${fileExt}`;
+
           // Delete original picture
           firebase
             .storage()
@@ -389,6 +409,7 @@ const eventHandlers = {
             .then(() => console.log('File deleted'))
             .catch(err => console.error(err.message));
 
+          // Upload new image
           let picRef = storageRef.child(`${id}/${newFilename}`);
           picRef
             .put(image)
@@ -399,6 +420,7 @@ const eventHandlers = {
             .then(url => {
               console.log('file url: ', url);
               // TODO validation
+              // Update firestore document
               return firebase
                 .firestore()
                 .collection('feed_items')
@@ -408,6 +430,7 @@ const eventHandlers = {
                   filename: filename,
                   body: body,
                   tags: tags,
+                  alt: alt,
                   updated: Date.now(),
                 });
             })
@@ -418,7 +441,7 @@ const eventHandlers = {
             .catch(err => console.error(err.message));
         } else {
           // TODO validation
-
+          // Update firestore document
           firebase
             .firestore()
             .collection('feed_items')
@@ -426,6 +449,7 @@ const eventHandlers = {
             .update({
               body: body,
               tags: tags,
+              alt: alt,
               updated: Date.now(),
             })
             .then(() => {

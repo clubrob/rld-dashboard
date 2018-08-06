@@ -108,6 +108,7 @@ const formViews = {
     let slug = data ? data.data().slug : '';
     let tags = data ? Object.keys(data.data().tags) : '';
     let storage_url = data ? data.data().storage_url : '';
+    let alt = data ? data.data().alt : '';
     let filename = data ? data.data().filename : '';
 
     let tagGroup = '';
@@ -165,6 +166,12 @@ const formViews = {
             <label for="body" class="label">Body</label>
             <div class="control">
               <textarea name="body" id="pic_body" class="textarea is-primary" required>${body}</textarea>
+            </div>
+          </div>
+          <div class="field">
+            <label for="alt-text" class="label">Alt Text</label>
+            <div class="control">
+              <input type="text" class="input is-primary" name="alt-text" id="pic_alt" value="${alt}">
             </div>
           </div>
           <div class="field">
