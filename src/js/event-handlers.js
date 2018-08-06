@@ -122,15 +122,17 @@ const eventHandlers = {
   openDeleteModal: function(event) {
     const btn = event.target;
     if (btn && btn.matches('.delete-button')) {
-      const type = btn.attributes.href.value.split('_')[1];
-      const id = btn.attributes.href.value.split('_')[2];
+      const type = btn.dataset.type;
+      const id = btn.dataset.id;
+      const filename = btn.dataset.filename;
+
       ui.modalContent.innerHTML = `
       <div class="message is-info">
         <div class="message-header">
           <p>Are you sure? No take backsies!</p>
         </div>
         <div class="message-body">
-        <button class="button is-danger for-real-delete" data-id="${id}" data-type="${type}">Yup. Delete it.</button>
+        <button class="button is-danger for-real-delete" data-id="${id}" data-type="${type}" data-filename="${filename}">Yup. Delete it.</button>
         </div>
       </div>
     `;
@@ -144,12 +146,13 @@ const eventHandlers = {
     if (btn && btn.matches('.for-real-delete')) {
       const id = btn.dataset.id;
       const type = btn.dataset.type;
+      const filename = btn.dataset.filename;
 
       if (type === 'pic') {
         firebase
           .storage()
           .ref()
-          .child(`${id}/**`)
+          .child(`${id}/${filename}`)
           .delete()
           .then(() => console.log('File deleted'))
           .catch(err => console.error(err.message));
@@ -218,7 +221,7 @@ const eventHandlers = {
         let id = form.querySelector('#post_id').value;
         // Keep original post date for tag values
         if (tags.length > 0) {
-          tags = reduceTags(tags, { date: date });
+          tags = reduceTags(tags, { date: +date });
         }
         // TODO validation
         firebase
@@ -282,7 +285,7 @@ const eventHandlers = {
         // EDIT QUIP
         let id = form.querySelector('#quip_id').value;
         if (tags.length > 0) {
-          tags = reduceTags(tags, { date: date });
+          tags = reduceTags(tags, { date: +date });
         }
         // TODO validation
         firebase
@@ -315,12 +318,20 @@ const eventHandlers = {
         tag => tag.textContent
       );
       let date = form.querySelector('#pic_date').value;
+      let filename = form.querySelector('#pic_filename').value;
+
+      let storage = firebase.storage();
+      let storageRef = storage.ref();
+      let id = firebase
+        .firestore()
+        .collection('feed_items')
+        .doc().id;
 
       if (form.querySelector('#pic_id').value === '') {
         // CREATE PIC
         // File info
         let image = document.querySelector('#pic_image').files[0];
-        let fileName = image.name;
+        filename = image.name;
         date = Date.now();
         if (tags.length > 0) {
           tags = reduceTags(tags, { date: date });
@@ -328,17 +339,9 @@ const eventHandlers = {
         let slugDigit = Math.floor(Math.random() * 90000) + 10000;
         let slug = `${date}-${slugDigit}`;
 
-        // Empty document to associate with the pic
-        let itemId = firebase
-          .firestore()
-          .collection('feed_items')
-          .doc().id;
+        let picRef = storageRef.child(`${id}/${filename}`);
 
-        let storage = firebase.storage();
-        let storageRef = storage.ref();
-        let newPicRef = storageRef.child(`${itemId}/${fileName}`);
-
-        newPicRef
+        picRef
           .put(image)
           .then(snapshot => {
             console.log('New pic uploaded');
@@ -350,10 +353,10 @@ const eventHandlers = {
             return firebase
               .firestore()
               .collection('feed_items')
-              .doc(itemId)
+              .doc(id)
               .set({
                 storage_url: url,
-                picname: filename,
+                filename: filename,
                 body: body,
                 tags: tags,
                 slug: slug,
@@ -362,31 +365,75 @@ const eventHandlers = {
               });
           })
           .then(() => {
-            console.log('New Pic with ID: ', itemId);
+            console.log('New Pic with ID: ', id);
             return modalCloseAndReload();
           })
           .catch(err => console.error(err.message));
       } else {
         // EDIT PIC
-        let id = form.querySelector('#pic_id').value;
+        id = form.querySelector('#pic_id').value;
         if (tags.length > 0) {
-          tags = reduceTags(tags, { date: date });
+          tags = reduceTags(tags, { date: +date });
         }
-        // TODO validation
-        firebase
-          .firestore()
-          .collection('feed_items')
-          .doc(id)
-          .update({
-            body: body,
-            tags: tags,
-            updated: Date.now(),
-          })
-          .then(() => {
-            console.log(id, ' Updated!');
-            return modalCloseAndReload();
-          })
-          .catch(err => console.error(err.message));
+        // File info
+        let image = document.querySelector('#pic_image').files[0];
+
+        if (image) {
+          let newFilename = image.name;
+          // Delete original picture
+          firebase
+            .storage()
+            .ref()
+            .child(`${id}/${filename}`)
+            .delete()
+            .then(() => console.log('File deleted'))
+            .catch(err => console.error(err.message));
+
+          let picRef = storageRef.child(`${id}/${newFilename}`);
+          picRef
+            .put(image)
+            .then(snapshot => {
+              console.log('Updated pic uploaded');
+              return snapshot.ref.getDownloadURL();
+            })
+            .then(url => {
+              console.log('file url: ', url);
+              // TODO validation
+              return firebase
+                .firestore()
+                .collection('feed_items')
+                .doc(id)
+                .update({
+                  storage_url: url,
+                  filename: filename,
+                  body: body,
+                  tags: tags,
+                  updated: Date.now(),
+                });
+            })
+            .then(() => {
+              console.log('Updated Pic for ID: ', id);
+              return modalCloseAndReload();
+            })
+            .catch(err => console.error(err.message));
+        } else {
+          // TODO validation
+
+          firebase
+            .firestore()
+            .collection('feed_items')
+            .doc(id)
+            .update({
+              body: body,
+              tags: tags,
+              updated: Date.now(),
+            })
+            .then(() => {
+              console.log(id, ' Updated!');
+              return modalCloseAndReload();
+            })
+            .catch(err => console.error(err.message));
+        }
       }
       event.preventDefault();
     }
@@ -401,21 +448,26 @@ const eventHandlers = {
       let picSrc = window.URL.createObjectURL(imageFile);
 
       let previewDiv = document.querySelector('#pic_preview');
-      previewDiv.innerHTML = `<img class="is-square" src="${picSrc}" alt="${fileName}">`;
+      previewDiv.innerHTML = `
+        <div class="box">
+          <p>
+            <img class="is-square" src="${picSrc}" alt="${fileName}">
+          </p>
+          <p>
+            <button id="pic_reset" class="button is-danger">Replace image</button>
+          </p>
+        </div>
+      `;
       let picContainer = document.querySelector('#pic_container');
       picContainer.classList.add('is-invisible');
       picContainer.style.position = 'absolute';
-      picContainer.insertAdjacentHTML(
-        'afterend',
-        `<button id="pic_reset" class="button is-danger">Cancel</button>`
-      );
     }
   },
 
   resetPic: function(event) {
     const btn = event.target;
 
-    if (btn && btn.matches('#pic_reset')) {
+    if (btn && (btn.matches('#pic_reset') || btn.matches('#pic_replace'))) {
       btn.parentNode.removeChild(btn);
       let picContainer = document.querySelector('#pic_container');
       let picField = `
@@ -471,12 +523,13 @@ const eventHandlers = {
           })
           .catch(err => console.error(err.message));
       } else {
+        // EDIT CLIP
         let id = form.querySelector('#clip_id').value;
         let title = form.querySelector('#clip_title').value;
         let body = form.querySelector('#clip_body').value;
         // Keep original post date for tag values
         if (tags.length > 0) {
-          tags = reduceTags(tags, { date: date });
+          tags = reduceTags(tags, { date: +date });
         }
         // TODO validation
         firebase

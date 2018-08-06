@@ -1,6 +1,7 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
+admin.firestore().settings({ timestampsInSnapshots: true });
 
 const express = require('express');
 const rp = require('request-promise');
@@ -11,30 +12,6 @@ const { check, validationResult } = require('express-validator/check');
 
 const app = express();
 
-// Firebase token auth middleware function to protect routes
-function authorizeMe(req, res, next) {
-  let idToken;
-  // Grab token from POST header
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer ')
-  ) {
-    idToken = req.headers.authorization.split('Bearer ')[1];
-    // Firebase function to verify token
-    admin
-      .auth()
-      .verifyIdToken(idToken)
-      .then(decoded => decoded)
-      .then(() => next())
-      .catch(err => {
-        console.error(err.message);
-        res.status(403).send('Unauthorized');
-      });
-  } else {
-    res.status(403).send('Not Allowed');
-  }
-}
-
 // For cross origin resource sharing
 app.use(cors);
 
@@ -42,7 +19,6 @@ app.use(cors);
 // GET one item
 app.get(
   '/feed/:slug',
-  authorizeMe,
   [
     // Validate slug
     check('slug').matches(/^[a-zA-Z0-9-_]+$/),
@@ -54,7 +30,7 @@ app.get(
       return res.status(422).json({ errors: errors.array() });
     }
     // Firestore collection
-    const collectionRef = admin.firestore().collection('feed');
+    const collectionRef = admin.firestore().collection('feed_items');
     const query = collectionRef.where('slug', '==', req.params.slug);
 
     return query
@@ -77,9 +53,10 @@ app.get(
 );
 
 // GET all items
-app.get('/feed', authorizeMe, (req, res) => {
-  const collectionRef = admin.firestore().collection('feed');
-  const query = collectionRef.orderBy('date');
+// TODO Pagination
+app.get('/feed', (req, res) => {
+  const collectionRef = admin.firestore().collection('feed_items');
+  const query = collectionRef.orderBy('date', 'desc');
 
   return query
     .get()
@@ -96,48 +73,50 @@ app.get('/feed', authorizeMe, (req, res) => {
     });
 });
 
-// GET tag list
-app.get(
-  '/tag/:tag',
-  authorizeMe,
-  [check('tag').isAlphanumeric()],
-  (req, res) => {
-    // Return input validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
-    }
-    const tag = req.params.tag;
-    const collectionRef = admin.firestore().collection('feed');
-    const query = collectionRef
-      .where(`tags.${tag}`, '>', 0)
-      .orderBy(`tags.${tag}`);
-
-    return query
-      .get()
-      .then(querySnapshot => {
-        let results = [];
-        if (querySnapshot.size > 0) {
-          querySnapshot.forEach(doc => {
-            results.push(doc.data());
-          });
-          return res.json(results);
-        }
-        return res.send('No such document');
-      })
-      .catch(err => {
-        console.error('Document not found: ', err.message);
-        return res.send('Document not found');
-      });
+// GET tag item list
+// TODO Pagination
+app.get('/tag/:tag', [check('tag').isAlphanumeric()], (req, res) => {
+  // Return input validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
   }
-);
+  const tag = req.params.tag;
+  console.log(tag);
+  const collectionRef = admin.firestore().collection('feed_items');
+  const query = collectionRef
+    .where(`tags.${tag}`, '>', 0)
+    .orderBy(`tags.${tag}`);
 
-// GET post type list
-/* app.get('/featured', (req, res) => {
-  const collectionRef = admin.firestore().collection('feed');
-  const query = collectionRef.where(`item_type`, '=', 0).orderBy(`tags.featured`, 'desc').limit(3);
+  return query
+    .get()
+    .then(querySnapshot => {
+      let results = [];
+      if (querySnapshot.size > 0) {
+        querySnapshot.forEach(doc => {
+          results.push(doc.data());
+        });
+        return res.json(results);
+      }
+      return res.send(results);
+    })
+    .catch(err => {
+      console.error('Document not found: ', err.message);
+      return res.send('Document not found');
+    });
+});
 
-  return query.get()
+// GET item type list
+app.get('/category/:type', [check('type').isAlphanumeric()], (req, res) => {
+  const collectionRef = admin.firestore().collection('feed_items');
+  const type = req.params.type;
+
+  const query = collectionRef
+    .where(`item_type`, '=', type)
+    .orderBy(`date`, 'desc');
+
+  return query
+    .get()
     .then(querySnapshot => {
       let results = [];
       if (querySnapshot.size > 0) {
@@ -152,59 +131,6 @@ app.get(
       console.error('Document not found: ', err.message);
       return res.send('Document not found');
     });
-}); */
-
-// Post create pic
-app.post('/pic', function createPic(req, res) {
-  // Convert tags array to object. For querying in Firestore.
-  // Reducer function for array to obj.
-  var tagReducer = function(tagObj, tag) {
-    if (!tagObj[tag]) {
-      // Skip duplicate tags
-      tagObj[tag] = Date.now();
-    }
-    return tagObj;
-  };
-  var tags = {};
-  if (req.body.tags.length > 0) {
-    tags = req.body.tags.reduce(tagReducer, {});
-  }
-  // Set Date
-  var date = Date.now();
-  // Create empty item to associate image URI
-  var newItemId = admin
-    .firestore()
-    .collection('feed_items')
-    .doc().id;
-
-  var filename = 'temp.jpg';
-
-  var picRef = admin.storage().ref(`${newItemId}/${filename}`);
-
-  return picRef
-    .put(req.body.image)
-    .then(snapshot => {
-      console.log('new pic uploaded');
-      return snapshot.ref.getDownloadURL();
-    })
-    .then(url => {
-      console.log('file url: ', url);
-      return url;
-    })
-    .then(url => {
-      return admin
-        .firestore()
-        .collection('feed_items')
-        .doc(newItemId)
-        .update({
-          storage_uri: url,
-          body: req.body.body,
-          tags: tags,
-          item_type: req.body.item_type,
-          date: date,
-        });
-    })
-    .catch(err => console.error(err.message));
 });
 
 // HTTPS function
@@ -297,5 +223,3 @@ exports.saveReadable = functions.firestore
       return 'Not a clip';
     }
   });
-
-// TODO dedupe tags after update

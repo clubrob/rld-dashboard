@@ -108,6 +108,8 @@ const formViews = {
     let slug = data ? data.data().slug : '';
     let tags = data ? Object.keys(data.data().tags) : '';
     let storage_url = data ? data.data().storage_url : '';
+    let filename = data ? data.data().filename : '';
+
     let tagGroup = '';
     if (tags.length > 0) {
       tags.forEach(tag => {
@@ -118,30 +120,18 @@ const formViews = {
     }
 
     let imgPreview = '';
-    let picField = `
-      <div class="field" id="pic_field">
-        <div class="control">
-          <div class="file">
-            <label class="label" id="pic_container">
-              <input type="file" name="image" id="pic_image" class="file-input" required>
-              <span class="file-cta">
-                <span class="file-icon">
-                  <i class="fa fa-upload"></i>
-                </span>
-                <span class="file-label">
-                  Add Image...
-                </span>
-              </span>
-            </label>
-          </div>
-        </div>
-      </div>
-    `;
+    let hideToggle = '';
     if (data) {
-      picField = '';
+      hideToggle = 'is-invisible';
+
       imgPreview = `
         <div class="box">
-          <p><img src="${storage_url}"></p>
+          <p>
+            <img src="${storage_url}">
+          </p>
+          <p>
+            <button class="button is-danger" id="pic_replace">Replace image</button>
+          </p>
         </div>
       `;
     }
@@ -154,7 +144,23 @@ const formViews = {
       <div class="modal-card-body">
         <div id="pic_preview">${imgPreview}</div>
         <form id="pic_form" class="form" method="post" enctype="multipart/form-data">
-          ${picField}
+          <div class="field" id="pic_field">
+            <div class="control">
+              <div class="file">
+                <label class="label ${hideToggle}" id="pic_container">
+                  <input type="file" name="image" id="pic_image" class="file-input" required>
+                  <span class="file-cta">
+                    <span class="file-icon">
+                      <i class="fa fa-upload"></i>
+                    </span>
+                    <span class="file-label">
+                      Add Image...
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
           <div class="field">
             <label for="body" class="label">Body</label>
             <div class="control">
@@ -176,6 +182,7 @@ const formViews = {
           <input type="hidden" id="pic_id" value="${id}">
           <input type="hidden" id="pic_date" value="${date}">
           <input type="hidden" id="pic_slug" value="${slug}">
+          <input type="hidden" id="pic_filename" value="${filename}">
         </form>
       </div>
     `;
