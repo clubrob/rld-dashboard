@@ -185,6 +185,7 @@ const eventHandlers = {
       let form = document.querySelector('#post_form');
       let title = form.querySelector('#post_title').value;
       let body = form.querySelector('#post_body').value;
+      let summary = form.querySelector('#post_summary').value;
       let alt = form.querySelector('#post_alt').value;
       let date = form.querySelector('#post_date').value;
       let filename = form.querySelector('#post_filename').value;
@@ -205,7 +206,7 @@ const eventHandlers = {
       // CREATE POST
       if (form.querySelector('#post_id').value === '') {
         // File info
-        let image = document.querySelector('#post_image').files[0];
+        let image = document.querySelector('#pic_image').files[0];
         let fileArr = image.name.toLowerCase().split('.');
         let fileExt = fileArr[fileArr.length - 1];
 
@@ -247,6 +248,7 @@ const eventHandlers = {
                 filename: filename,
                 title: title,
                 body: body,
+                summary: summary,
                 tags: tags,
                 slug: slug,
                 alt: alt,
@@ -309,6 +311,7 @@ const eventHandlers = {
                   filename: newFilename,
                   title: title,
                   body: body,
+                  summary: summary,
                   tags: tags,
                   alt: alt,
                   updated: Date.now(),
@@ -329,6 +332,7 @@ const eventHandlers = {
             .update({
               title: title,
               body: body,
+              summary: summary,
               tags: tags,
               alt: alt,
               updated: Date.now(),
@@ -565,10 +569,7 @@ const eventHandlers = {
   previewPic: function(event) {
     const input = event.target;
 
-    if (
-      input &&
-      (input.matches('#pic_image') || input.matches('#post_image'))
-    ) {
+    if (input && input.matches('#pic_image')) {
       let imageFile = input.files[0];
       let fileName = imageFile.name;
       let picSrc = window.URL.createObjectURL(imageFile);
@@ -622,6 +623,7 @@ const eventHandlers = {
     if (btn && btn.matches('#save_clip')) {
       let form = document.querySelector('#clip_form');
       let url = form.querySelector('#clip_url').value;
+      let body = form.querySelector('#clip_body').value;
       let tags = Array.from(form.getElementsByClassName('tag')).map(
         tag => tag.textContent
       );
@@ -639,6 +641,7 @@ const eventHandlers = {
           .collection('feed_items')
           .add({
             url: url,
+            body: body,
             tags: tags,
             item_type: 'clip',
             date: date,

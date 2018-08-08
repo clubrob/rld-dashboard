@@ -27,7 +27,7 @@
     "gulp-sass": "^4.0.1",
     "gulp-sourcemaps": "^2.6.4",
     "gulp-uglify-es": "^1.0.4",
-    "webpack-stream": "^5.1.0"
+    "webpack-stream": "^5.1.1"
   },
   "dependencies": {
     "bulma": "^0.7.1",

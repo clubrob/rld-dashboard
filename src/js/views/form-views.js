@@ -4,6 +4,7 @@ const formViews = {
     let id = data ? data.id : '';
     let title = data ? data.data().title : '';
     let body = data ? data.data().body : '';
+    let summary = data ? data.data().summary : '';
     let date = data ? data.data().date : '';
     let slug = data ? data.data().slug : '';
     let tags = data ? Object.keys(data.data().tags) : '';
@@ -49,7 +50,7 @@ const formViews = {
             <div class="control">
               <div class="file">
                 <label class="label ${hideToggle}" id="pic_container">
-                  <input type="file" name="image" id="post_image" class="file-input" required>
+                  <input type="file" name="image" id="pic_image" class="file-input" required>
                   <span class="file-cta">
                     <span class="file-icon">
                       <i class="fa fa-upload"></i>
@@ -78,6 +79,10 @@ const formViews = {
           <div class="field">
             <label for="body" class="label">Body</label>
             <textarea class="textarea is-primary" name="body" id="post_body" required>${body}</textarea>
+          </div>
+          <div class="field">
+            <label for="summary" class="label">Summary</label>
+            <textarea class="textarea is-primary" name="summary" id="post_summary" required>${summary}</textarea>
           </div>
           <div class="field">
             <label for="tags" class="label">Tags</label>
@@ -274,12 +279,6 @@ const formViews = {
             <input value="${title}" type="text" name="title" id="clip_title" class="input is-primary" required>
           </div>
         </div>
-        <div class="field">
-          <label for="body" class="label">Body</label>
-          <div class="control">
-            <textarea class="textarea is-primary" name="body" id="clip_body" required>${body}</textarea>
-          </div>
-        </div>
         <input type="hidden" id="clip_url" value="${url}">
       `;
     } else {
@@ -302,6 +301,12 @@ const formViews = {
         ${urlDisplay}
         <form id="clip_form" class="form">
           ${fields}
+          <div class="field">
+          <label for="body" class="label">Body <span class="help has-text-grey-light">Add a note...</span></label>
+          <div class="control">
+              <textarea class="textarea is-primary" name="body" id="clip_body" required>${body}</textarea>
+            </div>
+          </div>
           <div class="field">
             <label for="tags" class="label">Tags</label>
             <div class="control">

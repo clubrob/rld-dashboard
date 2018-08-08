@@ -74,12 +74,12 @@ app.get('/feed', (req, res) => {
 });
 
 // GET latest POST for home page
-app.get('/latest-post', (req, res) => {
+app.get('/featured', (req, res) => {
   const collectionRef = admin.firestore().collection('feed_items');
   const query = collectionRef
-    .where('item_type', '=', 'post')
-    .orderBy('date', 'desc')
-    .limit(1);
+    .where('tags.featured', '>', 0)
+    .orderBy('tags.featured', 'desc')
+    .limit(2);
 
   return query
     .get()
@@ -199,7 +199,7 @@ exports.scrapeClip = functions.firestore
           return snapshot.ref.set(
             {
               title: clipProps.title,
-              body: clipProps.summary,
+              summary: clipProps.summary,
               slug: clipProps.slug,
             },
             { merge: true }
