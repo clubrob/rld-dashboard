@@ -52,11 +52,34 @@ app.get(
   }
 );
 
-// GET all items
+// GET 20 items
 // TODO Pagination
 app.get('/feed', (req, res) => {
   const collectionRef = admin.firestore().collection('feed_items');
-  const query = collectionRef.orderBy('date', 'desc');
+  const query = collectionRef.orderBy('date', 'desc').limit(20);
+
+  return query
+    .get()
+    .then(querySnapshot => {
+      let results = [];
+      querySnapshot.forEach(doc => {
+        results.push(doc.data());
+      });
+      return res.json(results);
+    })
+    .catch(err => {
+      console.error('Error getting documents: ', err);
+      return res.send('Error getting documents');
+    });
+});
+
+// GET latest POST for home page
+app.get('/latest-post', (req, res) => {
+  const collectionRef = admin.firestore().collection('feed_items');
+  const query = collectionRef
+    .where('item_type', '=', 'post')
+    .orderBy('date', 'desc')
+    .limit(1);
 
   return query
     .get()
@@ -194,6 +217,7 @@ exports.saveReadable = functions.firestore
   .document('/feed_items/{documentId}')
   .onCreate(function readable(snapshot, context) {
     if (snapshot.data().item_type === 'clip') {
+      const id = snapshot.id;
       const url = snapshot.data().url;
       const rpOptions = {
         uri: `https://mercury.postlight.com/parser?url=${url}`,
@@ -210,12 +234,13 @@ exports.saveReadable = functions.firestore
           return data;
         })
         .then(data => {
-          return snapshot.ref.set(
-            {
+          return admin
+            .firestore()
+            .collection('readable')
+            .add({
+              clip_id: id,
               readable: data.content,
-            },
-            { merge: true }
-          );
+            });
         })
         .then(res => console.log('Added reader-friendly content: ', res))
         .catch(err => console.error(err.message));

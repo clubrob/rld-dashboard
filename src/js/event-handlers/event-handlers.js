@@ -1,21 +1,7 @@
-var slugify = require('slugify');
-var ui = require('./ui');
-var formViews = require('./form-views');
-
-function reduceTags(arr, options) {
-  return arr.reduce((accObj, item) => {
-    if (!accObj[item]) {
-      accObj[item] = options ? options.date : true;
-    }
-    return accObj;
-  }, {});
-}
-
-function modalCloseAndReload() {
-  ui.modal.classList.remove('is-active');
-  ui.modalContent.innerHTML = '';
-  window.location.reload();
-}
+const slugify = require('slugify');
+const { modalCloseAndReload, reduceTags } = require('../lib/utils');
+const ui = require('../ui');
+const formViews = require('../views/form-views');
 
 const eventHandlers = {
   toggleMobileMenu: function() {
@@ -148,13 +134,32 @@ const eventHandlers = {
       const type = btn.dataset.type;
       const filename = btn.dataset.filename;
 
-      if (type === 'pic') {
+      if (type === 'pic' || type === 'post') {
         firebase
           .storage()
           .ref()
           .child(`${id}/${filename}`)
           .delete()
           .then(() => console.log('File deleted'))
+          .catch(err => console.error(err.message));
+      }
+
+      if (type === 'clip') {
+        firebase
+          .firestore()
+          .collection('readable')
+          .where('clip_id', '==', `${id}`)
+          .get()
+          .then(snapshot => {
+            return snapshot.forEach(doc => {
+              firebase
+                .firestore()
+                .collection('readable')
+                .doc(doc.id)
+                .delete();
+            });
+          })
+          .then(() => console.log('Clip reference deleted'))
           .catch(err => console.error(err.message));
       }
 
@@ -180,7 +185,17 @@ const eventHandlers = {
       let form = document.querySelector('#post_form');
       let title = form.querySelector('#post_title').value;
       let body = form.querySelector('#post_body').value;
+      let alt = form.querySelector('#post_alt').value;
       let date = form.querySelector('#post_date').value;
+      let filename = form.querySelector('#post_filename').value;
+
+      let storage = firebase.storage();
+      let storageRef = storage.ref();
+      let id = firebase
+        .firestore()
+        .collection('feed_items')
+        .doc().id;
+
       let tags = Array.from(form.getElementsByClassName('tag')).map(
         tag => tag.textContent
       );
@@ -189,30 +204,58 @@ const eventHandlers = {
       // If empty ID, then new post; else, edit post.
       // CREATE POST
       if (form.querySelector('#post_id').value === '') {
+        // File info
+        let image = document.querySelector('#post_image').files[0];
+        let fileArr = image.name.toLowerCase().split('.');
+        let fileExt = fileArr[fileArr.length - 1];
+
         date = Date.now();
         if (tags.length > 0) {
           tags = reduceTags(tags, { date: date });
         }
+
         // Randomize slug to use as index for queries
         let slugDigit = Math.floor(Math.random() * 90000) + 10000;
         slug = slugify(`${title}-${slugDigit}`, {
           remove: /[$*_+~.()'"!,?:@]/g,
         });
 
+        // Slug and filename for pic
+        let altSlugged = slugify(`${alt.toLowerCase()}`, {
+          remove: /[$*_+~.()'"!,?:@]/g,
+        });
+        filename = `${altSlugged}.${fileExt}`;
+
+        let picRef = storageRef.child(`${id}/${filename}`);
+
         // TODO validation
-        firebase
-          .firestore()
-          .collection('feed_items')
-          .add({
-            title: title,
-            body: body,
-            tags: tags,
-            slug: slug,
-            item_type: 'post',
-            date: date,
+        picRef
+          .put(image)
+          .then(snapshot => {
+            console.log('New pic uploaded');
+            return snapshot.ref.getDownloadURL();
           })
-          .then(docRef => {
-            console.log('New Post with ID: ', docRef.id);
+          .then(url => {
+            console.log('file url: ', url);
+            // TODO validation
+            return firebase
+              .firestore()
+              .collection('feed_items')
+              .doc(id)
+              .set({
+                storage_url: url,
+                filename: filename,
+                title: title,
+                body: body,
+                tags: tags,
+                slug: slug,
+                alt: alt,
+                item_type: 'post',
+                date: date,
+              });
+          })
+          .then(() => {
+            console.log('New Post with ID: ', id);
             return modalCloseAndReload();
           })
           .catch(err => console.error(err.message));
@@ -223,23 +266,79 @@ const eventHandlers = {
         if (tags.length > 0) {
           tags = reduceTags(tags, { date: +date });
         }
-        // TODO validation
-        firebase
-          .firestore()
-          .collection('feed_items')
-          .doc(id)
-          .update({
-            title: title,
-            body: body,
-            tags: tags,
-            slug: slug,
-            updated: Date.now(),
-          })
-          .then(() => {
-            console.log(id, ' Updated!');
-            return modalCloseAndReload();
-          })
-          .catch(err => console.error(err.message));
+        // File info
+        let image = document.querySelector('#pic_image').files[0];
+
+        // If new image file.
+        if (image) {
+          // Slug and filename for image
+          let fileArr = image.name.toLowerCase().split('.');
+          let fileExt = fileArr[fileArr.length - 1];
+          let altSlugged = slugify(`${alt.toLowerCase()}`, {
+            remove: /[$*_+~.()'"!,?:@]/g,
+          });
+          let newFilename = `${altSlugged}.${fileExt}`;
+
+          // Delete original image
+          firebase
+            .storage()
+            .ref()
+            .child(`${id}/${filename}`)
+            .delete()
+            .then(() => console.log('File deleted'))
+            .catch(err => console.error(err.message));
+
+          // Upload new image
+          let picRef = storageRef.child(`${id}/${newFilename}`);
+          picRef
+            .put(image)
+            .then(snapshot => {
+              console.log('Updated image uploaded');
+              return snapshot.ref.getDownloadURL();
+            })
+            .then(url => {
+              console.log('file url: ', url);
+              // TODO validation
+              // Update firestore document
+              return firebase
+                .firestore()
+                .collection('feed_items')
+                .doc(id)
+                .update({
+                  storage_url: url,
+                  filename: newFilename,
+                  title: title,
+                  body: body,
+                  tags: tags,
+                  alt: alt,
+                  updated: Date.now(),
+                });
+            })
+            .then(() => {
+              console.log(id, ' Updated!');
+              return modalCloseAndReload();
+            })
+            .catch(err => console.error(err.message));
+        } else {
+          // TODO validation
+          // Update firestore document
+          firebase
+            .firestore()
+            .collection('feed_items')
+            .doc(id)
+            .update({
+              title: title,
+              body: body,
+              tags: tags,
+              alt: alt,
+              updated: Date.now(),
+            })
+            .then(() => {
+              console.log(id, ' Updated!');
+              return modalCloseAndReload();
+            })
+            .catch(err => console.error(err.message));
+        }
       }
       event.preventDefault();
     }
@@ -335,7 +434,6 @@ const eventHandlers = {
         let fileArr = image.name.toLowerCase().split('.');
         let fileExt = fileArr[fileArr.length - 1];
 
-        console.log(image, fileExt);
         // Rewrite scripted variables for new item
         date = Date.now();
         if (tags.length > 0) {
@@ -394,7 +492,8 @@ const eventHandlers = {
         // If new image file.
         if (image) {
           // Slug and filename for pic
-          let fileExt = image.name.split('.')[image.name.length - 1];
+          let fileArr = image.name.toLowerCase().split('.');
+          let fileExt = fileArr[fileArr.length - 1];
           let altSlugged = slugify(`${alt}`, {
             remove: /[$*_+~.()'"!,?:@]/g,
           });
@@ -466,7 +565,10 @@ const eventHandlers = {
   previewPic: function(event) {
     const input = event.target;
 
-    if (input && input.matches('#pic_image')) {
+    if (
+      input &&
+      (input.matches('#pic_image') || input.matches('#post_image'))
+    ) {
       let imageFile = input.files[0];
       let fileName = imageFile.name;
       let picSrc = window.URL.createObjectURL(imageFile);
@@ -491,7 +593,7 @@ const eventHandlers = {
   resetPic: function(event) {
     const btn = event.target;
 
-    if (btn && (btn.matches('#pic_reset') || btn.matches('#pic_replace'))) {
+    if (btn && btn.matches('#pic_reset')) {
       btn.parentNode.removeChild(btn);
       let picContainer = document.querySelector('#pic_container');
       let picField = `

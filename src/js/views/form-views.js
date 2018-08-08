@@ -7,6 +7,10 @@ const formViews = {
     let date = data ? data.data().date : '';
     let slug = data ? data.data().slug : '';
     let tags = data ? Object.keys(data.data().tags) : '';
+    let storage_url = data ? data.data().storage_url : '';
+    let alt = data ? data.data().alt : '';
+    let filename = data ? data.data().filename : '';
+
     let tagGroup = '';
     if (tags.length > 0) {
       tags.forEach(tag => {
@@ -16,13 +20,55 @@ const formViews = {
       });
     }
 
+    let imgPreview = '';
+    let hideToggle = '';
+    if (data) {
+      hideToggle = 'is-invisible';
+
+      imgPreview = `
+        <div class="box">
+          <p>
+            <img src="${storage_url}">
+          </p>
+          <p>
+            <button class="button is-danger" id="pic_reset">Replace image</button>
+          </p>
+        </div>
+      `;
+    }
+
     return `
       <!-- POST FORM -->
       <div class="modal-card-head">
         <h3 class="modal-card-title is-3">${formTitle}</h3>
       </div>
       <div class="modal-card-body">
+        <div id="pic_preview">${imgPreview}</div>
         <form id="post_form" class="form">
+          <div class="field" id="pic_field">
+            <div class="control">
+              <div class="file">
+                <label class="label ${hideToggle}" id="pic_container">
+                  <input type="file" name="image" id="post_image" class="file-input" required>
+                  <span class="file-cta">
+                    <span class="file-icon">
+                      <i class="fa fa-upload"></i>
+                    </span>
+                    <span class="file-label">
+                      Add Featured Image...
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="alt-text" class="label">Alt Text</label>
+            <div class="control">
+              <input type="text" class="input is-primary" name="alt-text" id="post_alt" value="${alt}">
+            </div>
+          </div>
+          <hr>
           <div class="field">
             <label for="title" class="label">Title</label>
             <div class="control">
@@ -48,6 +94,7 @@ const formViews = {
           <input type="hidden" id="post_id" value="${id}">
           <input type="hidden" id="post_date" value="${date}">
           <input type="hidden" id="post_slug" value="${slug}">
+          <input type="hidden" id="post_filename" value="${filename}">
         </form>
       </div>
     `;
@@ -131,7 +178,7 @@ const formViews = {
             <img src="${storage_url}">
           </p>
           <p>
-            <button class="button is-danger" id="pic_replace">Replace image</button>
+            <button class="button is-danger" id="pic_reset">Replace image</button>
           </p>
         </div>
       `;

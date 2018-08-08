@@ -3,8 +3,8 @@ require('firebase/auth');
 require('firebase/storage');
 require('firebase/firestore');
 var ui = require('./ui');
-var handler = require('./event-handlers');
-var dashViews = require('./dash-views');
+var handler = require('./event-handlers/event-handlers');
+var dashViews = require('./views/dash-views');
 
 var firebaseConfig = {
   projectId: process.env.FIREBASE_PROJECT_ID,
@@ -31,13 +31,13 @@ auth.onAuthStateChanged(function checkUser(user) {
     document.body.style.display = 'block';
     ui.loginSection.style.display = 'none';
     ui.loginLink.style.display = 'none';
-    ui.dashboardSection.style.display = 'block';
+    ui.dashboardSection.classList.remove('hide');
     ui.logoutLink.style.display = 'block';
   } else {
     document.body.style.display = 'block';
+    ui.dashboardSection.classList.add('hide');
     ui.loginSection.style.display = 'block';
     ui.loginLink.style.display = 'block';
-    ui.dashboardSection.style.display = 'none';
     ui.logoutLink.style.display = 'none';
   }
 });
