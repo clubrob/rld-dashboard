@@ -75,3 +75,143 @@ function getAllContent() {
     })
     .catch(err => console.error(err.message));
 }
+
+const photos = require('../data/insta.json').photos;
+
+let re = /#[a-z]*/gi;
+
+const slugify = require('slugify');
+
+function handleFileSelect(event) {
+  event.stopPropagation();
+  event.preventDefault();
+
+  var files = event.dataTransfer.files; // FileList object.
+
+  for (let i = 0, file; (file = files[i]); i++) {
+    photos.forEach(photo => {
+      if (photo.path.split('/')[2] === file.name) {
+        let id = firebase
+          .firestore()
+          .collection('feed_items')
+          .doc().id;
+
+        let date = new Date(photo.taken_at).getTime();
+
+        let hashtags = {
+          bestofinstagram: date,
+        };
+        let match;
+        do {
+          match = re.exec(photo.caption);
+          if (match) {
+            // console.log('match', match[0]);
+            hashtags[match[0].substr(1)] = date;
+          }
+        } while (match);
+
+        let body = photo.caption || '';
+        let alt = photo.caption || '';
+        // Slug and filename for pic
+        let altSlugged = slugify(`${alt.substr(0, 30).toLowerCase()}`, {
+          remove: /[$*_+~.()'"!,?:@]/g,
+        });
+        let fileExt = file.name.split('.')[1];
+        let filename = `${altSlugged}.${fileExt}`;
+
+        let slugDigit = Math.floor(Math.random() * 90000) + 10000;
+        let slug = `${date}-${slugDigit}`;
+
+        let storage = firebase.storage();
+        let storageRef = storage.ref();
+        let picRef = storageRef.child(`${id}/${filename}`);
+
+        /* let item = {
+          // storage_url: url,
+          filename: filename,
+          body: body,
+          tags: hashtags,
+          slug: slug,
+          alt: alt,
+          item_type: 'pic',
+          date: date,
+        };
+        console.log(item); */
+        picRef
+          .put(file)
+          .then(snapshot => {
+            console.log('New pic uploaded');
+            return snapshot.ref.getDownloadURL();
+          })
+          .then(url => {
+            console.log('file url: ', url);
+            // TODO validation
+            return firebase
+              .firestore()
+              .collection('feed_items')
+              .doc(id)
+              .set({
+                storage_url: url,
+                filename: filename,
+                body: body,
+                tags: hashtags,
+                slug: slug,
+                alt: alt,
+                item_type: 'pic',
+                date: date,
+              });
+          })
+          .then(() => {
+            console.log('New Pic with ID: ', id);
+            return;
+          })
+          .catch(err => console.error(err.message));
+      }
+    });
+  }
+}
+
+function handleDragOver(evt) {
+  evt.stopPropagation();
+  evt.preventDefault();
+  evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+}
+
+// Setup the dnd listeners.
+var dropZone = document.getElementById('drop_zone');
+dropZone.addEventListener('dragover', handleDragOver, false);
+dropZone.addEventListener('drop', handleFileSelect, false);
+
+/* insta.forEach(snap => {
+  // var objectURL = window.URL.createObjectURL(snap.path);
+  console.log(snap);
+}); */
+
+/* tweets.forEach(tweet => {
+  let body = tweet.body;
+  let date = tweet.date * 1000;
+  let hashtags = {
+    bestoftwitter: date,
+  };
+  let match;
+  do {
+    match = re.exec(tweet.body);
+    if (match) {
+      // console.log('match', match[0]);
+      hashtags[match[0].substr(1)] = tweet.date;
+    }
+  } while (match);
+
+  let slugDigit = Math.floor(Math.random() * 90000) + 10000;
+  let slug = `${date}-${slugDigit}`;
+
+  let item = {
+    body: body,
+    date: date,
+    slug: slug,
+    item_type: 'quip',
+    tags: hashtags,
+  };
+
+  console.log(item);
+}); */

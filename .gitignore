@@ -3,6 +3,8 @@ public/
 node_modules/
 functions/node_modules/
 src/js.old/
+src/data/
+data/
 .firebaserc
 firebase.json
 firestore.indexes.json

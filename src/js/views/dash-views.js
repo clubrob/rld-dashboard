@@ -23,7 +23,7 @@ const dashViews = {
           <td>${item}</td>
           <td><span class="is-size-7">${date}</span></td>
           <td><span class="tag is-info is-uppercase content-type">${type}</span></td>
-          <td>
+          <td style="white-space: nowrap;">
             <a href="#" class="button is-success edit-button" data-type="${type}" data-id="${id}" data-filename="${filename}">
               Edit
             </a>
