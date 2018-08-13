@@ -54,7 +54,7 @@ app.get(
 
 // GET 20 items
 // TODO Pagination
-app.get('/feed', (req, res) => {
+/* app.get('/feed', (req, res) => {
   const collectionRef = admin.firestore().collection('feed_items');
   const query = collectionRef.orderBy('date', 'desc').limit(20);
 
@@ -71,6 +71,78 @@ app.get('/feed', (req, res) => {
       console.error('Error getting documents: ', err);
       return res.send('Error getting documents');
     });
+}); */
+app.get('/feed', (req, res) => {
+  const collectionRef = admin.firestore().collection('feed_items');
+  let startAfter = req.query.s || undefined;
+  let endBefore = req.query.e || undefined;
+  let itemId = startAfter || endBefore;
+
+  if (itemId) {
+    let next = collectionRef.doc(itemId);
+
+    return next
+      .get()
+      .then(snapshot => {
+        console.log('next');
+        let query;
+        if (startAfter) {
+          query = collectionRef
+            .orderBy('date', 'desc')
+            .startAfter(snapshot.data().date)
+            .limit(10);
+        }
+        if (endBefore) {
+          console.log(snapshot.data());
+          query = collectionRef
+            .orderBy('date', 'desc')
+            .startAfter(snapshot.data().date)
+            .limit(10);
+        }
+        return query.get();
+      })
+      .then(documentSnapshots => {
+        let results = {};
+        results.docs = [];
+        documentSnapshots.forEach(doc => {
+          results.docs.push(doc.data());
+        });
+        results.pages = {
+          next: `?s=${
+            documentSnapshots.docs[documentSnapshots.docs.length - 1].id
+          }`,
+          prev: `?e=${documentSnapshots.docs[0].id}`,
+        };
+        return res.json(results);
+      })
+      .catch(err => {
+        console.error('Error getting documents: ', err);
+        return res.send('Error getting documents');
+      });
+  } else {
+    const first = collectionRef.orderBy('date', 'desc').limit(10);
+    return first
+      .get()
+      .then(documentSnapshots => {
+        console.log('all');
+        let results = {};
+        results.docs = [];
+        documentSnapshots.forEach(doc => {
+          results.docs.push(doc.data());
+        });
+        results.pages = {
+          next: `?s=${
+            documentSnapshots.docs[documentSnapshots.docs.length - 1].id
+          }`,
+          prev: `?e=${documentSnapshots.docs[0].id}`,
+        };
+        return res.json(results);
+      })
+      .catch(err => {
+        console.error('Error getting documents: ', err);
+        return res.send('Error getting documents');
+      });
+  }
 });
 
 // GET latest POST for home page
