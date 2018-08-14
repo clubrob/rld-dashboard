@@ -35,6 +35,9 @@ gulp.task('bundleJSDev', () =>
             'FIREBASE_PROJECT_ID',
             'FIREBASE_DB_URL',
             'FIREBASE_STORAGE_BUCKET',
+            'ALGOLIA_APP_ID',
+            'ALGOLIA_API_KEY',
+            'ALGOLIA_INDEX_NAME',
           ]),
         ],
       })
@@ -101,21 +104,27 @@ gulp.task('optimizeImages', done => {
 
 gulp.task(
   'serve',
-  gulp.parallel(['optimizeImages', 'bundleCSS', 'bundleJSDev', 'cleanHTML'], () => {
-    browser.init({
-      server: {
-        baseDir: './public',
-        middleware: [historyApi()],
-      },
-    });
+  gulp.parallel(
+    ['optimizeImages', 'bundleCSS', 'bundleJSDev', 'cleanHTML'],
+    () => {
+      browser.init({
+        server: {
+          baseDir: './public',
+          middleware: [historyApi()],
+        },
+      });
 
-    gulp.watch('src/scss/**/*.scss', gulp.series('bundleCSS'));
-    gulp.watch('src/js/**/*.js', gulp.series('bundleJSDev'));
-    gulp.watch('src/views/**/*.html', gulp.series('cleanHTML'));
-    gulp.watch('src/images/**/*', gulp.series('optimizeImages'));
-  })
+      gulp.watch('src/scss/**/*.scss', gulp.series('bundleCSS'));
+      gulp.watch('src/js/**/*.js', gulp.series('bundleJSDev'));
+      gulp.watch('src/views/**/*.html', gulp.series('cleanHTML'));
+      gulp.watch('src/images/**/*', gulp.series('optimizeImages'));
+    }
+  )
 );
 
 gulp.task('default', gulp.series('serve'));
-gulp.task('build', gulp.parallel('optimizeImages', 'bundleCSS', 'bundleJS', 'cleanHTML'));
+gulp.task(
+  'build',
+  gulp.parallel('optimizeImages', 'bundleCSS', 'bundleJS', 'cleanHTML')
+);
 gulp.task('prod', gulp.series('clean:public', 'build'));

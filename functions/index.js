@@ -9,6 +9,7 @@ const cheerio = require('cheerio');
 const slugify = require('slugify');
 const cors = require('cors')({ origin: true });
 const { check, validationResult } = require('express-validator/check');
+const algoliasearch = require('algoliasearch');
 
 const app = express();
 
@@ -52,26 +53,6 @@ app.get(
   }
 );
 
-// GET 20 items
-// TODO Pagination
-/* app.get('/feed', (req, res) => {
-  const collectionRef = admin.firestore().collection('feed_items');
-  const query = collectionRef.orderBy('date', 'desc').limit(20);
-
-  return query
-    .get()
-    .then(querySnapshot => {
-      let results = [];
-      querySnapshot.forEach(doc => {
-        results.push(doc.data());
-      });
-      return res.json(results);
-    })
-    .catch(err => {
-      console.error('Error getting documents: ', err);
-      return res.send('Error getting documents');
-    });
-}); */
 app.get('/feed', (req, res) => {
   const collectionRef = admin.firestore().collection('feed_items');
   let startAfter = req.query.s || undefined;
@@ -280,7 +261,7 @@ exports.scrapeClip = functions.firestore
         .then(res => console.log('Added additional properties: ', res))
         .catch(err => console.error(err.message));
     } else {
-      return 'Not a clip';
+      return console.log('Not a clip');
     }
   });
 
@@ -317,6 +298,50 @@ exports.saveReadable = functions.firestore
         .then(res => console.log('Added reader-friendly content: ', res))
         .catch(err => console.error(err.message));
     } else {
-      return 'Not a clip';
+      return console.log('Not a clip');
     }
+  });
+
+// Algolia search indexing
+exports.indexOnCreated = functions.firestore
+  .document('feed_items/{documentId}')
+  .onCreate(function algoliaIndexCreate(snapshot, context) {
+    const ALGOLIA_APP_ID = functions.config().algolia.app_id;
+    const ALGOLIA_API_KEY = functions.config().algolia.api_key;
+    const ALGOLIA_INDEX_NAME = 'feed_items';
+    const algolia = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_API_KEY);
+
+    const item = snapshot.data();
+    item.objectID = context.params.documentId;
+
+    const index = algolia.initIndex(ALGOLIA_INDEX_NAME);
+    return index.saveObject(item);
+  });
+exports.indexOnUpdated = functions.firestore
+  .document('feed_items/{documentId}')
+  .onUpdate(function algoliaIndexUpdate(snapshot, context) {
+    const ALGOLIA_APP_ID = functions.config().algolia.app_id;
+    const ALGOLIA_API_KEY = functions.config().algolia.api_key;
+    const ALGOLIA_INDEX_NAME = 'feed_items';
+    const algolia = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_API_KEY);
+
+    const item = snapshot.after.data();
+    item.objectID = context.params.documentId;
+
+    const index = algolia.initIndex(ALGOLIA_INDEX_NAME);
+    return index.saveObject(item);
+  });
+exports.indexOnDeleted = functions.firestore
+  .document('feed_items/{documentId}')
+  .onDelete(function algoliaIndexDelete(snapshot, context) {
+    const ALGOLIA_APP_ID = functions.config().algolia.app_id;
+    const ALGOLIA_API_KEY = functions.config().algolia.api_key;
+    const ALGOLIA_INDEX_NAME = 'feed_items';
+    const algolia = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_API_KEY);
+
+    const item = snapshot.data();
+    item.objectID = context.params.documentId;
+
+    const index = algolia.initIndex(ALGOLIA_INDEX_NAME);
+    return index.deleteObject(item.objectID);
   });
