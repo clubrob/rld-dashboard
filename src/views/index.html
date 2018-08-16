@@ -55,19 +55,25 @@
         <a href="#" id="add_pic" class="tag is-link is-medium">New Pic</a>
         <a href="#" id="add_clip" class="tag is-link is-medium">New Clip</a>
       </div>
-      <table id="content_table" class="table is-bordered is-striped is-fullwidth">
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Date Added</th>
-            <th>Type</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="content_table_body">
-
-        </tbody>
-      </table>
+      <div class="table-container">
+        <table id="content_table" class="table is-bordered is-striped is-fullwidth">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Date Added</th>
+              <th>Type</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="content_table_body">
+  
+          </tbody>
+        </table>
+      </div>
+      <nav id="dashboard_pagination" class="pagination" role="navigation" aria-label="pagination">
+        <a id="pagination_prev" class="pagination-previous button is-primary">Previous</a>
+        <a id="pagination_next" class="pagination-next button is-primary">Next page</a>
+      </nav>
     </section>
   </div>
   <div id="dash_modal" class="modal">

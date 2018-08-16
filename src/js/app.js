@@ -27,7 +27,7 @@ document.body.style.display = 'none';
 
 auth.onAuthStateChanged(function checkUser(user) {
   if (user) {
-    getAllContent();
+    getDashTableContent({ prev: false, next: false });
     document.body.style.display = 'block';
     ui.loginSection.style.display = 'none';
     ui.loginLink.style.display = 'none';
@@ -62,13 +62,61 @@ ui.modal.addEventListener('click', handler.saveClip);
 ui.modal.addEventListener('click', handler.deleteItem);
 ui.contentTable.addEventListener('click', handler.openEditModal);
 ui.contentTable.addEventListener('click', handler.openDeleteModal);
+ui.nextButton.addEventListener('click', pageNext);
+ui.prevButton.addEventListener('click', pagePrev);
 
-function getAllContent() {
-  firestore
+function pageNext() {
+  let id = ui.nextButton.dataset.id;
+  return firestore
+    .collection('feed_items')
+    .doc(id)
+    .get()
+    .then(doc => {
+      let next = { next: doc };
+      return getDashTableContent(next);
+    })
+    .catch(err => console.error(err.message));
+}
+
+function pagePrev() {
+  let id = ui.prevButton.dataset.id;
+  return firestore
+    .collection('feed_items')
+    .doc(id)
+    .get()
+    .then(doc => {
+      let prev = { prev: doc };
+      return getDashTableContent(prev);
+    })
+    .catch(err => console.error(err.message));
+}
+
+function getDashTableContent(pageObj) {
+  let query = firestore
     .collection('feed_items')
     .orderBy('date', 'desc')
+    .limit(5);
+
+  if (pageObj.prev) {
+    query = firestore
+      .collection('feed_items')
+      .orderBy('date', 'desc')
+      .endBefore(pageObj.prev.data().date)
+      .limit(5);
+  }
+  if (pageObj.next) {
+    query = firestore
+      .collection('feed_items')
+      .orderBy('date', 'desc')
+      .startAfter(pageObj.next.data().date)
+      .limit(5);
+  }
+
+  query
     .get()
     .then(snapshot => {
+      ui.nextButton.dataset.id = snapshot.docs[snapshot.docs.length - 1].id;
+      ui.prevButton.dataset.id = snapshot.docs[0].id;
       return (ui.contentTableBody.innerHTML = dashViews.dashTable(
         snapshot.docs
       ));

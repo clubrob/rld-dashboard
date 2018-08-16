@@ -127,4 +127,10 @@ gulp.task(
   'build',
   gulp.parallel('optimizeImages', 'bundleCSS', 'bundleJS', 'cleanHTML')
 );
-gulp.task('prod', gulp.series('clean:public', 'build'));
+gulp.task(
+  'prod',
+  gulp.series('clean:public', 'build', done => {
+    gulp.src('./robots.txt').pipe(gulp.dest('./public'));
+    done();
+  })
+);

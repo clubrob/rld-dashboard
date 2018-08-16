@@ -10,3 +10,8 @@ a.tag {
     background-color: darken(#3273dc, 10%);
   }
 }
+
+#content_table {
+  max-width: 500px;
+  overflow: hidden;
+}

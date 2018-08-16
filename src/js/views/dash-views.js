@@ -5,9 +5,8 @@ const dashViews = {
       let item =
         '<span class="has-text-info is-italic has-text-weight-bold">Clip, refresh for title</span>';
       let filename = '';
-      if (doc.data().body) {
-        item = doc.data().body.substring(0, 50);
-      }
+      item = doc.data().body;
+
       if (doc.data().title) {
         item = doc.data().title;
       }
@@ -20,7 +19,7 @@ const dashViews = {
 
       html += `
         <tr>
-          <td>${item}</td>
+          <td style="overflow: hidden;">${item}</td>
           <td><span class="is-size-7">${date}</span></td>
           <td><span class="tag is-info is-uppercase content-type">${type}</span></td>
           <td style="white-space: nowrap;">

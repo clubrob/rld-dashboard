@@ -77,6 +77,14 @@ const eventHandlers = {
     }
   },
 
+  pageNext: function() {
+    console.log('next');
+  },
+
+  pagePrev: function() {
+
+  },
+
   deleteTag: function(event) {
     const tagDelete = event.target;
     if (tagDelete && tagDelete.matches('.delete')) {

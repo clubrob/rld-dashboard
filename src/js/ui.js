@@ -19,6 +19,8 @@ const ui = {
   saveQuipButton: document.querySelector('#save_quip'),
   savePicButton: document.querySelector('#save_pic'),
   saveClipButton: document.querySelector('#save_clip'),
+  prevButton: document.querySelector('#pagination_prev'),
+  nextButton: document.querySelector('#pagination_next'),
   // Data
   email: document.querySelector('#email'),
   password: document.querySelector('#password'),
