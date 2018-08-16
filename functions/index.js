@@ -74,10 +74,9 @@ app.get('/feed', (req, res) => {
             .limit(10);
         }
         if (endBefore) {
-          console.log(snapshot.data());
           query = collectionRef
             .orderBy('date', 'desc')
-            .startAfter(snapshot.data().date)
+            .endBefore(snapshot.data().date)
             .limit(10);
         }
         return query.get();
