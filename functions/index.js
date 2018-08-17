@@ -60,12 +60,11 @@ app.get('/feed', (req, res) => {
   let itemId = startAfter || endBefore;
 
   if (itemId) {
-    let next = collectionRef.doc(itemId);
+    let queryCursor = collectionRef.doc(itemId);
 
-    return next
+    return queryCursor
       .get()
       .then(snapshot => {
-        console.log('next');
         let query;
         if (startAfter) {
           query = collectionRef
@@ -100,8 +99,8 @@ app.get('/feed', (req, res) => {
         return res.send('Error getting documents');
       });
   } else {
-    const first = collectionRef.orderBy('date', 'desc').limit(10);
-    return first
+    const initialQuery = collectionRef.orderBy('date', 'desc').limit(10);
+    return initialQuery
       .get()
       .then(documentSnapshots => {
         console.log('all');
@@ -114,7 +113,7 @@ app.get('/feed', (req, res) => {
           next: `?s=${
             documentSnapshots.docs[documentSnapshots.docs.length - 1].id
           }`,
-          prev: `?e=${documentSnapshots.docs[0].id}`,
+          prev: ``,
         };
         return res.json(results);
       })
@@ -149,63 +148,164 @@ app.get('/featured', (req, res) => {
 });
 
 // GET tag item list
-// TODO Pagination
 app.get('/tag/:tag', [check('tag').isAlphanumeric()], (req, res) => {
   // Return input validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(422).json({ errors: errors.array() });
   }
-  const tag = req.params.tag;
-  console.log(tag);
   const collectionRef = admin.firestore().collection('feed_items');
-  const query = collectionRef
-    .where(`tags.${tag}`, '>', 0)
-    .orderBy(`tags.${tag}`);
+  const tag = req.params.tag;
+  let startAfter = req.query.s || undefined;
+  let endBefore = req.query.e || undefined;
+  let itemId = startAfter || endBefore;
 
-  return query
-    .get()
-    .then(querySnapshot => {
-      let results = [];
-      if (querySnapshot.size > 0) {
-        querySnapshot.forEach(doc => {
-          results.push(doc.data());
+  if (itemId) {
+    let queryCursor = collectionRef.doc(itemId);
+
+    return queryCursor
+      .get()
+      .then(snapshot => {
+        let query;
+        if (startAfter) {
+          query = collectionRef
+            .where(`tags.${tag}`, '>', 0)
+            .orderBy(`tags.${tag}`, 'desc')
+            .startAfter(snapshot.data().date)
+            .limit(10);
+        }
+        if (endBefore) {
+          query = collectionRef
+            .where(`tags.${tag}`, '>', 0)
+            .orderBy(`tags.${tag}`, 'desc')
+            .endBefore(snapshot.data().date)
+            .limit(10);
+        }
+        return query.get();
+      })
+      .then(documentSnapshots => {
+        let results = {};
+        results.docs = [];
+        documentSnapshots.forEach(doc => {
+          results.docs.push(doc.data());
         });
+        results.pages = {
+          next: `?s=${
+            documentSnapshots.docs[documentSnapshots.docs.length - 1].id
+          }`,
+          prev: `?e=${documentSnapshots.docs[0].id}`,
+        };
         return res.json(results);
-      }
-      return res.send(results);
-    })
-    .catch(err => {
-      console.error('Document not found: ', err.message);
-      return res.send('Document not found');
-    });
+      })
+      .catch(err => {
+        console.error('Error getting documents: ', err);
+        return res.send('Error getting documents');
+      });
+  } else {
+    const initialQuery = collectionRef
+      .where(`tags.${tag}`, '>', 0)
+      .orderBy(`tags.${tag}`, 'desc')
+      .limit(10);
+
+    return initialQuery
+      .get()
+      .then(documentSnapshots => {
+        let results = {};
+        results.docs = [];
+        documentSnapshots.forEach(doc => {
+          results.docs.push(doc.data());
+        });
+        results.pages = {
+          next: `?s=${
+            documentSnapshots.docs[documentSnapshots.docs.length - 1].id
+          }`,
+          prev: ``,
+        };
+        return res.json(results);
+      })
+      .catch(err => {
+        console.error('Document not found: ', err.message);
+        return res.send('Document not found');
+      });
+  }
 });
 
 // GET item type list
 app.get('/category/:type', [check('type').isAlphanumeric()], (req, res) => {
   const collectionRef = admin.firestore().collection('feed_items');
   const type = req.params.type;
+  let startAfter = req.query.s || undefined;
+  let endBefore = req.query.e || undefined;
+  let itemId = startAfter || endBefore;
 
-  const query = collectionRef
-    .where(`item_type`, '=', type)
-    .orderBy(`date`, 'desc');
+  if (itemId) {
+    let queryCursor = collectionRef.doc(itemId);
 
-  return query
-    .get()
-    .then(querySnapshot => {
-      let results = [];
-      if (querySnapshot.size > 0) {
-        querySnapshot.forEach(doc => {
-          results.push(doc.data());
+    return queryCursor
+      .get()
+      .then(snapshot => {
+        let query;
+        if (startAfter) {
+          query = collectionRef
+            .where(`item_type`, '=', type)
+            .orderBy(`date`, 'desc')
+            .startAfter(snapshot.data().date)
+            .limit(10);
+        }
+        if (endBefore) {
+          query = collectionRef
+            .where(`item_type`, '=', type)
+            .orderBy(`date`, 'desc')
+            .endBefore(snapshot.data().date)
+            .limit(10);
+        }
+        return query.get();
+      })
+      .then(documentSnapshots => {
+        let results = {};
+        results.docs = [];
+        documentSnapshots.forEach(doc => {
+          results.docs.push(doc.data());
         });
+        results.pages = {
+          next: `?s=${
+            documentSnapshots.docs[documentSnapshots.docs.length - 1].id
+          }`,
+          prev: `?e=${documentSnapshots.docs[0].id}`,
+        };
         return res.json(results);
-      }
-      return res.send('No such document');
-    })
-    .catch(err => {
-      console.error('Document not found: ', err.message);
-      return res.send('Document not found');
-    });
+      })
+      .catch(err => {
+        console.error('Error getting documents: ', err);
+        return res.send('Error getting documents');
+      });
+  } else {
+    const initialQuery = collectionRef
+      .where(`item_type`, '=', type)
+      .orderBy(`date`, 'desc')
+      .limit(10);
+
+    return initialQuery
+      .get()
+      .then(documentSnapshots => {
+        let results = {};
+        results.docs = [];
+        documentSnapshots.forEach(doc => {
+          results.docs.push(doc.data());
+        });
+        results.pages = {
+          next: `?s=${
+            documentSnapshots.docs[documentSnapshots.docs.length - 1].id
+          }`,
+          prev: ``,
+        };
+        return res.json(results);
+      })
+      .catch(err => {
+        console.error('Document not found: ', err.message);
+        return res.send('Document not found');
+      });
+  }
 });
 
 // HTTPS function
