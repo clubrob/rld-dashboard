@@ -123,3 +123,25 @@ function getDashTableContent(pageObj) {
     })
     .catch(err => console.error(err.message));
 }
+
+/* function batchUpdate() {
+  firestore
+    .collection('feed_items')
+    .get()
+    .then(documentSnapshots => {
+      documentSnapshots.forEach(doc => {
+        firestore
+          .collection('feed_items')
+          .doc(doc.id)
+          .update({
+            published: true,
+          });
+      });
+      return;
+    })
+    .catch(err => console.error(err.message));
+}
+document.querySelector('#update-me').addEventListener('click', event => {
+  batchUpdate();
+  event.preventDefault();
+}); */

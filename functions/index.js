@@ -10,6 +10,7 @@ const slugify = require('slugify');
 const cors = require('cors')({ origin: true });
 const { check, validationResult } = require('express-validator/check');
 const algoliasearch = require('algoliasearch');
+const { Feed } = require('feed');
 
 const app = express();
 
@@ -68,12 +69,14 @@ app.get('/feed', (req, res) => {
         let query;
         if (startAfter) {
           query = collectionRef
+            .where('published', '==', true)
             .orderBy('date', 'desc')
             .startAfter(snapshot.data().date)
             .limit(10);
         }
         if (endBefore) {
           query = collectionRef
+            .where('published', '==', true)
             .orderBy('date', 'desc')
             .endBefore(snapshot.data().date)
             .limit(10);
@@ -99,7 +102,10 @@ app.get('/feed', (req, res) => {
         return res.send('Error getting documents');
       });
   } else {
-    const initialQuery = collectionRef.orderBy('date', 'desc').limit(10);
+    const initialQuery = collectionRef
+      .where('published', '==', true)
+      .orderBy('date', 'desc')
+      .limit(10);
     return initialQuery
       .get()
       .then(documentSnapshots => {
@@ -169,6 +175,7 @@ app.get('/tag/:tag', [check('tag').isAlphanumeric()], (req, res) => {
         let query;
         if (startAfter) {
           query = collectionRef
+            .where('published', '==', true)
             .where(`tags.${tag}`, '>', 0)
             .orderBy(`tags.${tag}`, 'desc')
             .startAfter(snapshot.data().date)
@@ -176,6 +183,7 @@ app.get('/tag/:tag', [check('tag').isAlphanumeric()], (req, res) => {
         }
         if (endBefore) {
           query = collectionRef
+            .where('published', '==', true)
             .where(`tags.${tag}`, '>', 0)
             .orderBy(`tags.${tag}`, 'desc')
             .endBefore(snapshot.data().date)
@@ -203,6 +211,7 @@ app.get('/tag/:tag', [check('tag').isAlphanumeric()], (req, res) => {
       });
   } else {
     const initialQuery = collectionRef
+      .where('published', '==', true)
       .where(`tags.${tag}`, '>', 0)
       .orderBy(`tags.${tag}`, 'desc')
       .limit(10);
@@ -247,14 +256,16 @@ app.get('/category/:type', [check('type').isAlphanumeric()], (req, res) => {
         let query;
         if (startAfter) {
           query = collectionRef
-            .where(`item_type`, '=', type)
+            .where('published', '==', true)
+            .where(`item_type`, '==', type)
             .orderBy(`date`, 'desc')
             .startAfter(snapshot.data().date)
             .limit(10);
         }
         if (endBefore) {
           query = collectionRef
-            .where(`item_type`, '=', type)
+            .where('published', '==', true)
+            .where(`item_type`, '==', type)
             .orderBy(`date`, 'desc')
             .endBefore(snapshot.data().date)
             .limit(10);
@@ -281,7 +292,8 @@ app.get('/category/:type', [check('type').isAlphanumeric()], (req, res) => {
       });
   } else {
     const initialQuery = collectionRef
-      .where(`item_type`, '=', type)
+      .where('published', '==', true)
+      .where(`item_type`, '==', type)
       .orderBy(`date`, 'desc')
       .limit(10);
 
@@ -306,6 +318,60 @@ app.get('/category/:type', [check('type').isAlphanumeric()], (req, res) => {
         return res.send('Document not found');
       });
   }
+});
+
+// Posts RSS feed
+app.get('/posts.xml', (req, res) => {
+  const feed = new Feed({
+    title: 'Rob Lindsey Design - Posts',
+    id: 'https://roblindsey.com/',
+    link: 'https://roblindsey.com/',
+    image:
+      'https://www.dropbox.com/s/9icqginpwp2aqej/roblindseydesign.png?raw=1',
+    favicon: 'https://roblindsey.com/images/icons/favicon.ico',
+  });
+
+  admin
+    .firestore()
+    .collection('feed_items')
+    .where('published', '==', true)
+    .where(`item_type`, '==', 'post')
+    .orderBy(`date`, 'desc')
+    .limit(20)
+    .get()
+    .then(documentSnapshots => {
+      documentSnapshots.forEach(doc => {
+        let body = doc.data().body.substr(0, 100);
+        if (body.indexOf('<') > 0) {
+          body = body.substr(0, body.indexOf('<'));
+        }
+        feed.addItem({
+          title: doc.data().title,
+          id: `https://roblindsey.com/feed/#/${doc.data().slug}`,
+          link: `https://roblindsey.com/feed/#/${doc.data().slug}`,
+          content: `
+            ${body}... 
+            <p>
+              <a href="https://roblindsey.com/feed/#/
+              ${doc.data().slug}
+              ">Continue reading...</a>
+            </p>
+          `,
+          author: [
+            {
+              name: 'Rob Lindsey',
+            },
+          ],
+          date: new Date(doc.data().date),
+          image: doc.data().storage_url,
+        });
+      });
+      return res.send(feed.atom1());
+    })
+    .catch(err => {
+      console.error('Document not found: ', err.message);
+      return res.send('Document not found');
+    });
 });
 
 // HTTPS function

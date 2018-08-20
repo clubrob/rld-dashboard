@@ -77,14 +77,6 @@ const eventHandlers = {
     }
   },
 
-  pageNext: function() {
-    console.log('next');
-  },
-
-  pagePrev: function() {
-
-  },
-
   deleteTag: function(event) {
     const tagDelete = event.target;
     if (tagDelete && tagDelete.matches('.delete')) {
@@ -197,6 +189,13 @@ const eventHandlers = {
       let alt = form.querySelector('#post_alt').value;
       let date = form.querySelector('#post_date').value;
       let filename = form.querySelector('#post_filename').value;
+      let published = form.querySelector('input[name="post_pub"]:checked')
+        .value;
+      if (published === 'publish') {
+        published = true;
+      } else {
+        published = false;
+      }
 
       let storage = firebase.storage();
       let storageRef = storage.ref();
@@ -260,6 +259,7 @@ const eventHandlers = {
                 tags: tags,
                 slug: slug,
                 alt: alt,
+                published: published,
                 item_type: 'post',
                 date: date,
               });
@@ -320,6 +320,7 @@ const eventHandlers = {
                   title: title,
                   body: body,
                   summary: summary,
+                  published: published,
                   tags: tags,
                   alt: alt,
                   updated: Date.now(),
@@ -341,6 +342,7 @@ const eventHandlers = {
               title: title,
               body: body,
               summary: summary,
+              published: published,
               tags: tags,
               alt: alt,
               updated: Date.now(),
@@ -366,6 +368,13 @@ const eventHandlers = {
         tag => tag.textContent
       );
       let date = form.querySelector('#quip_date').value;
+      let published = form.querySelector('input[name="quip_pub"]:checked')
+        .value;
+      if (published === 'publish') {
+        published = true;
+      } else {
+        published = false;
+      }
 
       if (form.querySelector('#quip_id').value === '') {
         // CREATE QUIP
@@ -384,6 +393,7 @@ const eventHandlers = {
             body: body,
             tags: tags,
             slug: slug,
+            published: published,
             item_type: 'quip',
             date: date,
           })
@@ -406,6 +416,7 @@ const eventHandlers = {
           .update({
             body: body,
             tags: tags,
+            published: published,
             updated: Date.now(),
           })
           .then(() => {
@@ -431,6 +442,12 @@ const eventHandlers = {
       );
       let date = form.querySelector('#pic_date').value;
       let filename = form.querySelector('#pic_filename').value;
+      let published = form.querySelector('input[name="pic_pub"]:checked').value;
+      if (published === 'publish') {
+        published = true;
+      } else {
+        published = false;
+      }
 
       let storage = firebase.storage();
       let storageRef = storage.ref();
@@ -483,6 +500,7 @@ const eventHandlers = {
                 tags: tags,
                 slug: slug,
                 alt: alt,
+                published: published,
                 item_type: 'pic',
                 date: date,
               });
@@ -542,6 +560,7 @@ const eventHandlers = {
                   body: body,
                   tags: tags,
                   alt: alt,
+                  published: published,
                   updated: Date.now(),
                 });
             })
@@ -561,6 +580,7 @@ const eventHandlers = {
               body: body,
               tags: tags,
               alt: alt,
+              published: published,
               updated: Date.now(),
             })
             .then(() => {
@@ -637,6 +657,13 @@ const eventHandlers = {
       );
       let date = form.querySelector('#clip_date').value;
       let slug = form.querySelector('#clip_slug').value;
+      let published = form.querySelector('input[name="clip_pub"]:checked')
+        .value;
+      if (published === 'publish') {
+        published = true;
+      } else {
+        published = false;
+      }
 
       if (form.querySelector('#clip_id').value === '') {
         date = Date.now();
@@ -651,6 +678,7 @@ const eventHandlers = {
             url: url,
             body: body,
             tags: tags,
+            published: published,
             item_type: 'clip',
             date: date,
           })
@@ -678,6 +706,7 @@ const eventHandlers = {
             body: body,
             tags: tags,
             slug: slug,
+            published: published,
             updated: Date.now(),
           })
           .then(() => {

@@ -11,6 +11,14 @@ const formViews = {
     let storage_url = data ? data.data().storage_url : '';
     let alt = data ? data.data().alt : '';
     let filename = data ? data.data().filename : '';
+    let publish = data ? data.data().published : '';
+    if (publish) {
+      pubChecked = ' checked ';
+      unpubChecked = '';
+    } else {
+      pubChecked = '';
+      unpubChecked = ' checked ';
+    }
 
     let tagGroup = '';
     if (tags.length > 0) {
@@ -93,6 +101,18 @@ const formViews = {
           </div>
           <div class="field">
             <div class="control">
+              <label class="radio" for="post_publish">
+                <input type="radio" name="post_pub" value="publish" id="post_publish" ${pubChecked}>
+                Publish
+              </label>
+              <label class="radio" for="post_unpublish">
+                <input type="radio" name="post_pub" value="unpublish" id="post_unpublish" ${unpubChecked}>
+                Unpublish
+              </label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="control">
               <button id="save_post" class="button is-primary" type="submit">Save Post</button>
             </div>
           </div>
@@ -111,6 +131,15 @@ const formViews = {
     let date = data ? data.data().date : '';
     let slug = data ? data.data().slug : '';
     let tags = data ? Object.keys(data.data().tags) : '';
+    let publish = data ? data.data().published : '';
+    let pubChecked, unpubChecked;
+    if (publish) {
+      pubChecked = ' checked ';
+      unpubChecked = '';
+    } else {
+      pubChecked = '';
+      unpubChecked = ' checked ';
+    }
     let tagGroup = '';
     if (tags.length > 0) {
       tags.forEach(tag => {
@@ -142,6 +171,18 @@ const formViews = {
           </div>
           <div class="field">
             <div class="control">
+              <label class="radio" for="quip_publish">
+                <input type="radio" name="quip_pub" id="quip_publish" ${pubChecked} value="publish">
+                Publish
+              </label>
+              <label class="radio" for="quip_unpublish">
+                <input type="radio" name="quip_pub" id="quip_unpublish" ${unpubChecked} value="unpublish">
+                Unpublish
+              </label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="control">
               <button id="save_quip" class="button is-primary" type="submit">Save Quip</button>
             </div>
           </div>
@@ -162,6 +203,14 @@ const formViews = {
     let storage_url = data ? data.data().storage_url : '';
     let alt = data ? data.data().alt : '';
     let filename = data ? data.data().filename : '';
+    let publish = data ? data.data().published : '';
+    if (publish) {
+      pubChecked = ' checked ';
+      unpubChecked = '';
+    } else {
+      pubChecked = '';
+      unpubChecked = ' checked ';
+    }
 
     let tagGroup = '';
     if (tags.length > 0) {
@@ -235,6 +284,18 @@ const formViews = {
           </div>
           <div class="field">
             <div class="control">
+              <label class="radio" for="pic_publish">
+                <input type="radio" name="pic_pub" id="pic_publish" ${pubChecked} value="publish">
+                Publish
+              </label>
+              <label class="radio" for="pic_unpublish">
+                <input type="radio" name="pic_pub" id="pic_unpublish" ${unpubChecked} value="unpublish">
+                Unpublish
+              </label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="control">
               <button id="save_pic" class="button is-primary">Save Pic</button>
             </div>
           </div>
@@ -255,6 +316,15 @@ const formViews = {
     let date = data ? data.data().date : '';
     let slug = data ? data.data().slug : '';
     let tags = data ? Object.keys(data.data().tags) : '';
+    let publish = data ? data.data().published : '';
+    if (publish) {
+      pubChecked = ' checked ';
+      unpubChecked = '';
+    } else {
+      pubChecked = '';
+      unpubChecked = ' checked ';
+    }
+
     let tagGroup = '';
     if (tags.length > 0) {
       tags.forEach(tag => {
@@ -312,6 +382,18 @@ const formViews = {
             <div class="control">
               <input type="text" class="input is-primary form-tags" name="tags" id="clip_tags">
               <p class="tags help">${tagGroup}</p>
+            </div>
+          </div>
+          <div class="field">
+            <div class="control">
+              <label class="radio" for="clip_publish">
+                <input type="radio" name="clip_pub" id="clip_publish" ${pubChecked} value="publish">
+                Publish
+              </label>
+              <label class="radio" for="clip_unpublish">
+                <input type="radio" name="clip_pub" id="clip_unpublish" ${unpubChecked} value="unpublish">
+                Unpublish
+              </label>
             </div>
           </div>
           <div class="field">

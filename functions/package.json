@@ -16,6 +16,7 @@
     "cors": "^2.8.4",
     "express": "^4.16.3",
     "express-validator": "^5.3.0",
+    "feed": "^2.0.1",
     "firebase-admin": "^6.0.0",
     "firebase-functions": "^2.0.5",
     "request": "^2.88.0",
