@@ -5,8 +5,10 @@ functions/node_modules/
 src/js.old/
 src/data/
 data/
+.firebase/
 .firebaserc
 firebase.json
 firestore.indexes.json
 firestore.rules
 storage.rules
+.firebase/hosting.0.cache
