@@ -175,7 +175,6 @@ app.get('/tag/:tag', [check('tag').isAlphanumeric()], (req, res) => {
         let query;
         if (startAfter) {
           query = collectionRef
-            .where('published', '==', true)
             .where(`tags.${tag}`, '>', 0)
             .orderBy(`tags.${tag}`, 'desc')
             .startAfter(snapshot.data().date)
@@ -183,7 +182,6 @@ app.get('/tag/:tag', [check('tag').isAlphanumeric()], (req, res) => {
         }
         if (endBefore) {
           query = collectionRef
-            .where('published', '==', true)
             .where(`tags.${tag}`, '>', 0)
             .orderBy(`tags.${tag}`, 'desc')
             .endBefore(snapshot.data().date)
@@ -211,7 +209,6 @@ app.get('/tag/:tag', [check('tag').isAlphanumeric()], (req, res) => {
       });
   } else {
     const initialQuery = collectionRef
-      .where('published', '==', true)
       .where(`tags.${tag}`, '>', 0)
       .orderBy(`tags.${tag}`, 'desc')
       .limit(10);
